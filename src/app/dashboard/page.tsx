@@ -1,0 +1,132 @@
+import { getSession } from "@/lib/auth/session";
+import { prisma } from "@/lib/prisma";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Plus, FileText, FolderOpen, Brain, PenLine } from "lucide-react";
+
+const STATUS_LABELS: Record<string, string> = {
+  SETUP: "Setting Up",
+  FACTS: "Organizing Facts",
+  ANALYSIS: "Legal Analysis",
+  DRAFTING: "Drafting",
+  REVIEW: "In Review",
+  FILED: "Filed",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  SETUP: "bg-blue-100 text-blue-800",
+  FACTS: "bg-purple-100 text-purple-800",
+  ANALYSIS: "bg-amber-100 text-amber-800",
+  DRAFTING: "bg-indigo-100 text-indigo-800",
+  REVIEW: "bg-orange-100 text-orange-800",
+  FILED: "bg-green-100 text-green-800",
+};
+
+export default async function DashboardPage() {
+  const session = await getSession();
+  if (!session) return null;
+
+  const cases = await prisma.case.findMany({
+    where: { organizationId: session.orgId },
+    orderBy: { updatedAt: "desc" },
+    include: {
+      _count: {
+        select: {
+          facts: true,
+          evidence: true,
+          drafts: true,
+          analyses: true,
+        },
+      },
+    },
+  });
+
+  return (
+    <div className="p-8">
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome back to {session.orgName}
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/dashboard/cases/new">
+            <Plus className="mr-2 h-4 w-4" /> New Case
+          </Link>
+        </Button>
+      </div>
+
+      {cases.length === 0 ? (
+        <Card className="flex flex-col items-center justify-center py-16">
+          <CardContent className="text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <FolderOpen className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold">No cases yet</h3>
+            <p className="mb-4 mt-1 text-sm text-muted-foreground">
+              Create your first case to start building a stronger pleading.
+            </p>
+            <Button asChild>
+              <Link href="/dashboard/cases/new">
+                <Plus className="mr-2 h-4 w-4" /> Create Your First Case
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {cases.map((c) => (
+            <Link key={c.id} href={`/cases/${c.id}`}>
+              <Card className="cursor-pointer transition-shadow hover:shadow-lg">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-lg">{c.title}</CardTitle>
+                    <Badge
+                      variant="secondary"
+                      className={STATUS_COLORS[c.status]}
+                    >
+                      {STATUS_LABELS[c.status]}
+                    </Badge>
+                  </div>
+                  <CardDescription>
+                    {c.courtType === "FEDERAL" ? "Federal" : "State"} Court —{" "}
+                    {c.jurisdiction}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <FileText className="h-3.5 w-3.5" />
+                      {c._count.facts} facts
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <FolderOpen className="h-3.5 w-3.5" />
+                      {c._count.evidence} evidence
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Brain className="h-3.5 w-3.5" />
+                      {c._count.analyses} analyses
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <PenLine className="h-3.5 w-3.5" />
+                      {c._count.drafts} drafts
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

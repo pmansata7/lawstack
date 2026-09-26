@@ -1,0 +1,262 @@
+// ─── Legal Claim Element Templates ─────────────────────────────────
+// Pre-built element structures for common claim types.
+// Each claim type has the legal elements that must be pleaded and proven.
+
+export interface ClaimElement {
+  element: string;
+  description: string;
+}
+
+export interface ClaimTemplate {
+  type: string;
+  label: string;
+  category: string;
+  elements: ClaimElement[];
+  description: string;
+}
+
+export const CLAIM_TEMPLATES: ClaimTemplate[] = [
+  {
+    type: "negligence",
+    label: "Negligence",
+    category: "Tort",
+    description: "Failure to exercise reasonable care causing harm to another.",
+    elements: [
+      { element: "Duty of Care", description: "Defendant owed plaintiff a duty of reasonable care." },
+      { element: "Breach of Duty", description: "Defendant breached that duty by failing to exercise reasonable care." },
+      { element: "Causation", description: "Defendant's breach was the actual and proximate cause of plaintiff's injury." },
+      { element: "Damages", description: "Plaintiff suffered actual harm or loss as a result." },
+    ],
+  },
+  {
+    type: "negligent_infliction",
+    label: "Negligent Infliction of Emotional Distress",
+    category: "Tort",
+    description: "Emotional distress caused by negligent conduct.",
+    elements: [
+      { element: "Duty", description: "Defendant owed a duty to avoid causing emotional distress." },
+      { element: "Breach", description: "Defendant's negligent conduct breached that duty." },
+      { element: "Causation", description: "Defendant's conduct caused plaintiff's emotional distress." },
+      { element: "Severe Emotional Distress", description: "Plaintiff suffered severe emotional distress." },
+    ],
+  },
+  {
+    type: "intentional_infliction",
+    label: "Intentional Infliction of Emotional Distress",
+    category: "Tort",
+    description: "Extreme and outrageous conduct causing severe emotional distress.",
+    elements: [
+      { element: "Extreme and Outrageous Conduct", description: "Defendant's conduct was extreme and outrageous." },
+      { element: "Intent or Recklessness", description: "Defendant acted intentionally or recklessly." },
+      { element: "Causation", description: "Defendant's conduct caused plaintiff's distress." },
+      { element: "Severe Emotional Distress", description: "Plaintiff suffered severe emotional distress." },
+    ],
+  },
+  {
+    type: "battery",
+    label: "Battery",
+    category: "Tort",
+    description: "Harmful or offensive contact with another person.",
+    elements: [
+      { element: "Harmful or Offensive Contact", description: "Defendant made harmful or offensive contact with plaintiff." },
+      { element: "Intent", description: "Defendant intended to make contact or knew with substantial certainty it would occur." },
+      { element: "Causation", description: "Defendant's contact caused plaintiff's harm." },
+      { element: "Damages", description: "Plaintiff suffered damages as a result." },
+    ],
+  },
+  {
+    type: "assault",
+    label: "Assault",
+    category: "Tort",
+    description: "Threat of imminent harmful or offensive contact.",
+    elements: [
+      { element: "Threatening Act", description: "Defendant committed an act that threatened imminent harmful or offensive contact." },
+      { element: "Intent", description: "Defendant intended to cause apprehension of contact." },
+      { element: "Apprehension", description: "Plaintiff reasonably apprehended imminent contact." },
+      { element: "Damages", description: "Plaintiff suffered damages." },
+    ],
+  },
+  {
+    type: "false_imprisonment",
+    label: "False Imprisonment",
+    category: "Tort",
+    description: "Intentional confinement of another without lawful authority.",
+    elements: [
+      { element: "Confinement", description: "Defendant confined plaintiff to a bounded area." },
+      { element: "Intent", description: "Defendant intended to confine plaintiff." },
+      { element: "Awareness or Harm", description: "Plaintiff was aware of or harmed by the confinement." },
+      { element: "No Lawful Authority", description: "Defendant had no lawful authority to confine plaintiff." },
+    ],
+  },
+  {
+    type: "defamation",
+    label: "Defamation",
+    category: "Tort",
+    description: "False statement of fact that injures reputation.",
+    elements: [
+      { element: "False Statement", description: "Defendant made a false statement of fact." },
+      { element: "Publication", description: "The statement was communicated to a third party." },
+      { element: "Fault", description: "Defendant acted with at least negligence regarding the statement's truth." },
+      { element: "Harm to Reputation", description: "The statement caused harm to plaintiff's reputation." },
+    ],
+  },
+  {
+    type: "fraud",
+    label: "Fraud / Fraudulent Misrepresentation",
+    category: "Tort",
+    description: "Intentional misrepresentation causing reliance and harm.",
+    elements: [
+      { element: "Misrepresentation", description: "Defendant made a false representation of material fact." },
+      { element: "Knowledge of Falsity", description: "Defendant knew the representation was false or made it recklessly." },
+      { element: "Intent to Induce Reliance", description: "Defendant intended plaintiff to rely on the representation." },
+      { element: "Justifiable Reliance", description: "Plaintiff justifiably relied on the representation." },
+      { element: "Damages", description: "Plaintiff suffered damages as a result." },
+    ],
+  },
+  {
+    type: "breach_of_contract",
+    label: "Breach of Contract",
+    category: "Contract",
+    description: "Failure to perform obligations under a valid contract.",
+    elements: [
+      { element: "Valid Contract", description: "A valid contract existed between the parties." },
+      { element: "Performance by Plaintiff", description: "Plaintiff performed or was excused from performance." },
+      { element: "Breach", description: "Defendant breached the contract by failing to perform." },
+      { element: "Damages", description: "Plaintiff suffered damages as a result of the breach." },
+    ],
+  },
+  {
+    type: "product_liability",
+    label: "Product Liability (Strict Liability)",
+    category: "Tort",
+    description: "Liability for defective products causing harm.",
+    elements: [
+      { element: "Defective Product", description: "The product was defective in design, manufacture, or warning." },
+      { element: "Injury", description: "Plaintiff suffered injury while using the product as intended or foreseeably." },
+      { element: "Causation", description: "The defect caused plaintiff's injury." },
+      { element: "In Stream of Commerce", description: "The product was in the stream of commerce when sold." },
+    ],
+  },
+  {
+    type: "premises_liability",
+    label: "Premises Liability",
+    category: "Tort",
+    description: "Liability for injuries caused by dangerous conditions on property.",
+    elements: [
+      { element: "Duty", description: "Defendant owed plaintiff a duty of care as possessor/owner of the property." },
+      { element: "Dangerous Condition", description: "A dangerous condition existed on the property." },
+      { element: "Knowledge", description: "Defendant knew or should have known of the dangerous condition." },
+      { element: "Causation", description: "The dangerous condition caused plaintiff's injury." },
+      { element: "Damages", description: "Plaintiff suffered damages." },
+    ],
+  },
+  {
+    type: "conversion",
+    label: "Conversion",
+    category: "Tort",
+    description: "Wrongful exercise of dominion over another's property.",
+    elements: [
+      { element: "Property Interest", description: "Plaintiff had a property interest in the chattel." },
+      { element: "Wrongful Acts", description: "Defendant intentionally exercised dominion or control over the chattel." },
+      { element: "Interference", description: "Defendant's acts interfered with plaintiff's rights in the chattel." },
+      { element: "Damages", description: "Plaintiff suffered damages." },
+    ],
+  },
+  {
+    type: "trespass",
+    label: "Trespass to Land",
+    category: "Tort",
+    description: "Intentional entry onto land owned by another.",
+    elements: [
+      { element: "Possession", description: "Plaintiff was in lawful possession of the land." },
+      { element: "Entry", description: "Defendant intentionally entered or remained on the land." },
+      { element: "Without Consent", description: "Defendant entered without plaintiff's consent." },
+      { element: "Damages", description: "Plaintiff suffered damages." },
+    ],
+  },
+  {
+    type: "nuisance",
+    label: "Nuisance",
+    category: "Tort",
+    description: "Unreasonable interference with use and enjoyment of property.",
+    elements: [
+      { element: "Interference", description: "Defendant's conduct interfered with plaintiff's use and enjoyment of property." },
+      { element: "Unreasonable", description: "The interference was unreasonable." },
+      { element: "Causation", description: "Defendant's conduct caused the interference." },
+      { element: "Damages", description: "Plaintiff suffered damages." },
+    ],
+  },
+  {
+    type: "unjust_enrichment",
+    label: "Unjust Enrichment / Restitution",
+    category: "Quasi-Contract",
+    description: "Recovery of benefits conferred without legal basis.",
+    elements: [
+      { element: "Benefit Conferred", description: "Plaintiff conferred a benefit on defendant." },
+      { element: "Defendant's Knowledge", description: "Defendant was aware of or accepted the benefit." },
+      { element: "Unjust Retention", description: "It would be unjust for defendant to retain the benefit without payment." },
+    ],
+  },
+  {
+    type: "negligent_hiring",
+    label: "Negligent Hiring / Supervision / Retention",
+    category: "Tort",
+    description: "Liability for harm caused by improperly vetted employees.",
+    elements: [
+      { element: "Incompetent Employee", description: "Defendant hired or retained an incompetent or dangerous employee." },
+      { element: "Knowledge or Should Have Known", description: "Defendant knew or should have known of the employee's incompetence." },
+      { element: "Foreseeable Harm", description: "The harm was a foreseeable consequence of the employee's incompetence." },
+      { element: "Causation", description: "The employee's conduct caused plaintiff's injury." },
+      { element: "Damages", description: "Plaintiff suffered damages." },
+    ],
+  },
+];
+
+export const JURISDICTIONS = {
+  federal: [
+    { value: "federal-northern-district-ca", label: "Northern District of California" },
+    { value: "federal-central-district-ca", label: "Central District of California" },
+    { value: "federal-southern-district-ny", label: "Southern District of New York" },
+    { value: "federal-eastern-district-ny", label: "Eastern District of New York" },
+    { value: "federal-northern-district-il", label: "Northern District of Illinois" },
+    { value: "federal-district-ma", label: "District of Massachusetts" },
+    { value: "federal-western-district-tx", label: "Western District of Texas" },
+    { value: "federal-southern-district-tx", label: "Southern District of Texas" },
+    { value: "federal-district-nv", label: "District of Nevada" },
+    { value: "federal-district-az", label: "District of Arizona" },
+    { value: "federal-district-wa", label: "Western District of Washington" },
+    { value: "federal-district-or", label: "District of Oregon" },
+    { value: "federal-district-co", label: "District of Colorado" },
+    { value: "federal-district-fl-s", label: "Southern District of Florida" },
+    { value: "federal-district-fl-m", label: "Middle District of Florida" },
+    { value: "federal-district-ga-n", label: "Northern District of Georgia" },
+  ],
+  state: [
+    { value: "ca-superior", label: "California Superior Court" },
+    { value: "ny-supreme", label: "New York Supreme Court" },
+    { value: "il-circuit", label: "Illinois Circuit Court" },
+    { value: "tx-district", label: "Texas District Court" },
+    { value: "ma-superior", label: "Massachusetts Superior Court" },
+    { value: "nv-district", label: "Nevada District Court" },
+    { value: "az-superior", label: "Arizona Superior Court" },
+    { value: "wa-superior", label: "Washington Superior Court" },
+    { value: "or-circuit", label: "Oregon Circuit Court" },
+    { value: "co-district", label: "Colorado District Court" },
+    { value: "fl-circuit", label: "Florida Circuit Court" },
+    { value: "ga-superior", label: "Georgia Superior Court" },
+  ],
+};
+
+export const DAMAGE_CATEGORIES = [
+  { value: "medical", label: "Medical Expenses" },
+  { value: "lost_wages", label: "Lost Wages / Income" },
+  { value: "future_medical", label: "Future Medical Expenses" },
+  { value: "future_lost_wages", label: "Future Lost Earning Capacity" },
+  { value: "property", label: "Property Damage" },
+  { value: "pain_suffering", label: "Pain and Suffering" },
+  { value: "emotional_distress", label: "Emotional Distress" },
+  { value: "loss_of_consortium", label: "Loss of Consortium" },
+  { value: "punitive", label: "Punitive Damages" },
+  { value: "legal_fees", label: "Legal Fees / Costs" },
+  { value: "other", label: "Other" },
+];

@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lawstack
+
+AI for real-world litigation. Turn facts into evidence-backed pleadings that survive motions to dismiss and demurrers.
+
+## Features
+
+- **Case Setup** — Enter key details, choose jurisdiction (state/federal), and define claims from pre-built legal element templates
+- **Facts & Evidence** — Organize facts, incident timeline, documents, witnesses, damages, and legal element checklists
+- **AI Legal Analysis** — Map facts to legal elements, assess claim strength, identify vulnerabilities, evaluate dismissal risk (Iqbal/Twombly), and find supporting precedent
+- **Complaint Draft Generator** — Generate structured, court-ready complaints with proper caption, jurisdiction, factual allegations, causes of action, and prayer for relief
+- **Review & File** — Collaborate with inline comments, resolve threads, export to PDF/DOCX/TXT, and track filing readiness
+- **Multi-Tenant** — Organization-based with roles (Owner, Admin, Attorney, Paralegal, Viewer)
+- **Pluggable AI** — Switch between OpenAI, Anthropic Claude, and AWS Bedrock with per-task model routing
+
+## Tech Stack
+
+- **Frontend**: Next.js 14 (App Router) + TypeScript + Tailwind CSS + shadcn/ui
+- **Backend**: Next.js Route Handlers + Server Actions
+- **Database**: Supabase (PostgreSQL) + Prisma ORM
+- **Auth**: Supabase Auth with Row-Level Security
+- **Storage**: Supabase Storage for document uploads
+- **AI**: Pluggable provider abstraction (OpenAI / Anthropic / Bedrock)
+- **Deploy**: Vercel + Supabase
 
 ## Getting Started
 
-First, run the development server:
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Set up environment variables
+
+Copy `.env.example` to `.env.local` and fill in your Supabase and AI provider credentials:
+
+```bash
+cp .env.example .env.local
+```
+
+### 3. Set up Supabase
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Get your Project URL and anon key from Settings > API
+3. Get your database connection string from Settings > Database
+4. Create a storage bucket named `evidence` (public)
+5. Run the Prisma migration:
+
+```bash
+npx prisma db push
+```
+
+### 4. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 5. Build for production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+```
 
-## Learn More
+## Deploy to Vercel
 
-To learn more about Next.js, take a look at the following resources:
+1. Push your code to GitHub
+2. Import the project in Vercel
+3. Add environment variables in Vercel dashboard
+4. Deploy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/
+│   ├── (landing)          # Marketing page replicating pleading.ai
+│   ├── login/             # Auth pages
+│   ├── signup/
+│   ├── dashboard/         # Case list + new case wizard
+│   ├── cases/[id]/        # Case workflow (5 steps)
+│   │   ├── setup/         # Step 1: Case details + claims
+│   │   ├── facts/         # Step 2: Facts & evidence
+│   │   ├── analysis/      # Step 3: AI legal analysis
+│   │   ├── draft/         # Step 4: Complaint draft generator
+│   │   └── review/        # Step 5: Review, collaborate, export
+│   ├── settings/          # Org + AI provider settings
+│   └── api/               # API routes
+├── components/
+│   ├── landing/           # Marketing page components
+│   ├── dashboard/         # Dashboard layout + sidebar
+│   ├── cases/             # Case workflow components
+│   └── settings/          # Settings forms
+└── lib/
+    ├── ai/                # AI provider abstraction + prompts
+    ├── auth/              # Session management
+    ├── legal/             # Claim templates + jurisdictions
+    ├── supabase/          # Supabase clients
+    └── types/             # TypeScript types
+```
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Proprietary. All rights reserved.

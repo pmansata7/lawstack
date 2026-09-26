@@ -1,0 +1,340 @@
+// Lawstack — Prisma schema for Supabase Postgres
+// All tables are multi-tenant via organization_id with RLS policies enforced at the DB level.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Organizations & Auth ───────────────────────────────────────────
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  type      OrgType  @default(LAW_FIRM)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  members   OrgMember[]
+  cases     Case[]
+
+  @@map("organizations")
+}
+
+enum OrgType {
+  LAW_FIRM
+  IN_HOUSE
+  COURT
+}
+
+model OrgMember {
+  id              String   @id @default(cuid())
+  organizationId  String   @map("organization_id")
+  userId          String   @map("user_id")
+  email           String
+  role            OrgRole  @default(ATTORNEY)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("org_members")
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  ATTORNEY
+  PARALEGAL
+  VIEWER
+}
+
+// ─── Cases ─────────────────────────────────────────────────────────
+
+model Case {
+  id              String     @id @default(cuid())
+  organizationId  String     @map("organization_id")
+  title           String
+  courtType       CourtType  @default(FEDERAL)
+  jurisdiction    String
+  caseNumber      String?
+  courtName       String?
+  plaintiff       String?
+  defendant       String?
+  opposingParty   String?
+  status          CaseStatus @default(SETUP)
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  claims          Claim[]
+  facts           Fact[]
+  evidence        Evidence[]
+  timeline        TimelineEntry[]
+  witnesses       Witness[]
+  damages         Damages[]
+  analyses        LegalAnalysis[]
+  drafts          Draft[]
+  collaborators   Collaboration[]
+
+  @@index([organizationId])
+  @@map("cases")
+}
+
+enum CourtType {
+  STATE
+  FEDERAL
+}
+
+enum CaseStatus {
+  SETUP
+  FACTS
+  ANALYSIS
+  DRAFTING
+  REVIEW
+  FILED
+}
+
+// ─── Claims ────────────────────────────────────────────────────────
+
+model Claim {
+  id          String   @id @default(cuid())
+  caseId      String   @map("case_id")
+  claimType   String
+  jurisdiction String
+  elements    Json     // array of { element, description, satisfied }
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  analyses    LegalAnalysis[]
+
+  @@index([caseId])
+  @@map("claims")
+}
+
+// ─── Facts ─────────────────────────────────────────────────────────
+
+model Fact {
+  id          String     @id @default(cuid())
+  caseId      String     @map("case_id")
+  statement   String
+  date        DateTime?
+  category    FactCategory
+  source      String?
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  case        Case       @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  evidence    Evidence[]
+
+  @@index([caseId])
+  @@map("facts")
+}
+
+enum FactCategory {
+  INCIDENT
+  BACKGROUND
+  DAMAGES
+  PROCEDURAL
+  WITNESS
+  DOCUMENT
+  OTHER
+}
+
+// ─── Evidence ──────────────────────────────────────────────────────
+
+model Evidence {
+  id          String        @id @default(cuid())
+  caseId      String        @map("case_id")
+  factId      String?       @map("fact_id")
+  type        EvidenceType
+  title       String
+  fileUrl     String?       @map("file_url")
+  fileName    String?       @map("file_name")
+  fileSize    Int?           @map("file_size")
+  mimeType    String?       @map("mime_type")
+  metadata    Json?
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  case        Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  fact        Fact?         @relation(fields: [factId], references: [id], onDelete: SetNull)
+
+  @@index([caseId])
+  @@index([factId])
+  @@map("evidence")
+}
+
+enum EvidenceType {
+  DOCUMENT
+  TIMELINE
+  WITNESS
+  DAMAGES
+  PHOTO
+  VIDEO
+  AUDIO
+  OTHER
+}
+
+// ─── Timeline ──────────────────────────────────────────────────────
+
+model TimelineEntry {
+  id          String   @id @default(cuid())
+  caseId      String   @map("case_id")
+  date        DateTime
+  title       String
+  description String?
+  linkedFacts Json?     @map("linked_facts") // array of fact IDs
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@map("timeline_entries")
+}
+
+// ─── Witnesses ────────────────────────────────────────────────────
+
+model Witness {
+  id          String   @id @default(cuid())
+  caseId      String   @map("case_id")
+  name        String
+  contact     String?
+  statement   String?
+  credibility String?  // high / medium / low
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@map("witnesses")
+}
+
+// ─── Damages ───────────────────────────────────────────────────────
+
+model Damages {
+  id          String   @id @default(cuid())
+  caseId      String   @map("case_id")
+  category    String   // medical, lost_wages, property, pain_suffering, punitive, other
+  amount      Float
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@map("damages")
+}
+
+// ─── AI Legal Analysis ─────────────────────────────────────────────
+
+model LegalAnalysis {
+  id              String   @id @default(cuid())
+  caseId          String   @map("case_id")
+  claimId         String?  @map("claim_id")
+  elementMapping  Json     @map("element_mapping") // [{ element, status, supportingFacts[], gaps[] }]
+  strengths       Json     // array of strings
+  vulnerabilities Json     // array of strings
+  dismissalRisk   String   @map("dismissal_risk") // low / medium / high
+  riskReasoning   String?  @map("risk_reasoning")
+  citedCases      Json     @map("cited_cases") // [{ citation, summary, relevance }]
+  proceduralChecklist Json? @map("procedural_checklist") // [{ requirement, met, notes }]
+  claimStrength   String   @map("claim_strength") // strong / moderate / weak
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  case            Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  claim           Claim?   @relation(fields: [claimId], references: [id], onDelete: SetNull)
+
+  @@index([caseId])
+  @@map("legal_analyses")
+}
+
+// ─── Drafts ────────────────────────────────────────────────────────
+
+model Draft {
+  id          String       @id @default(cuid())
+  caseId      String       @map("case_id")
+  type        DraftType
+  title       String
+  content     String       @db.Text
+  sections    Json         // [{ heading, body, citations[] }]
+  citations   Json         // [{ citation, source, factId }]
+  version     Int          @default(1)
+  status      DraftStatus  @default(DRAFT)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  case        Case         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+
+  @@index([caseId])
+  @@map("drafts")
+}
+
+enum DraftType {
+  COMPLAINT
+  MOTION
+  ANSWER
+  AMENDMENT
+}
+
+enum DraftStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  FILED
+}
+
+// ─── Collaboration ─────────────────────────────────────────────────
+
+model Collaboration {
+  id          String   @id @default(cuid())
+  caseId      String   @map("case_id")
+  userId      String   @map("user_id")
+  email       String
+  permission  String   @default("comment") // comment / edit / view
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@unique([caseId, userId])
+  @@index([caseId])
+  @@map("collaborations")
+}
+
+model Comment {
+  id          String   @id @default(cuid())
+  draftId     String   @map("draft_id")
+  userId      String   @map("user_id")
+  email       String
+  section     String?  // section heading the comment is attached to
+  content     String
+  resolved    Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  draft       Draft    @relation(fields: [draftId], references: [id], onDelete: Cascade)
+
+  @@index([draftId])
+  @@map("comments")
+}
+
+// ─── AI Provider Settings ───────────────────────────────────────────
+
+model AiSetting {
+  id              String   @id @default(cuid())
+  organizationId  String   @unique @map("organization_id")
+  provider        String   @default("openai") // openai / anthropic / bedrock
+  apiKey          String?  @map("api_key") // encrypted
+  model           String   @default("gpt-4o")
+  analysisModel   String?  @map("analysis_model")
+  draftingModel   String?  @map("drafting_model")
+  temperature     Float    @default(0.7)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("ai_settings")
+}
