@@ -53,8 +53,10 @@ export default async function DashboardPage() {
     <div className="p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
+          <h1 className="font-serif text-2xl font-semibold text-navy-950">
+            Dashboard
+          </h1>
+          <p className="text-ink-600">
             Welcome back to {session.orgName}
           </p>
         </div>
@@ -68,8 +70,8 @@ export default async function DashboardPage() {
       {cases.length === 0 ? (
         <Card className="flex flex-col items-center justify-center py-16">
           <CardContent className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <FolderOpen className="h-8 w-8 text-primary" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-brand-600">
+              <FolderOpen className="h-8 w-8" />
             </div>
             <h3 className="text-lg font-semibold">No cases yet</h3>
             <p className="mb-4 mt-1 text-sm text-muted-foreground">
@@ -86,7 +88,7 @@ export default async function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {cases.map((c) => (
             <Link key={c.id} href={`/cases/${c.id}`}>
-              <Card className="cursor-pointer transition-shadow hover:shadow-lg">
+              <Card className="cursor-pointer border-line transition-shadow hover:shadow-[0_8px_24px_-8px_rgba(7,20,51,0.12)]">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-lg">{c.title}</CardTitle>

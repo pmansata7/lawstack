@@ -4,21 +4,18 @@ const STATS = [
   {
     icon: TrendingDown,
     value: "60%",
-    label: "less time drafting initial pleadings",
-  highlight: "less time drafting",
-  sublabel: "initial pleadings",
+    highlight: "less time drafting",
+    sublabel: "initial pleadings",
   },
   {
     icon: ShieldOff,
     value: "Fewer",
-    label: "motions to dismiss and demurrers",
     highlight: "motions to dismiss",
     sublabel: "and demurrers",
   },
   {
     icon: TrendingUp,
     value: "Stronger",
-    label: "case outcomes",
     highlight: "case outcomes",
     sublabel: "",
   },
@@ -26,32 +23,34 @@ const STATS = [
 
 export function Stats() {
   return (
-    <section className="border-y bg-primary text-primary-foreground">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <section className="relative border-y border-line bg-tint py-20 lg:py-24">
+      <div className="container-x">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight">
+          <h2 className="heading-serif text-[36px] leading-[1.08] sm:text-[42px] lg:text-[46px]">
             Better pleadings. Better outcomes.
           </h2>
-          <p className="mt-4 text-lg text-primary-foreground/80">
+          <p className="mt-5 max-w-[500px] mx-auto text-pretty text-[16px] leading-[1.65] text-ink-600 lg:text-[17px]">
             Law firms and courts use Lawstack to reduce motion risk, improve
             efficiency, and deliver stronger results for their clients.
           </p>
         </div>
-        <div className="mt-12 grid gap-8 md:grid-cols-3">
+        <div className="mt-14 grid gap-10 md:grid-cols-3">
           {STATS.map((stat) => (
             <div
-              key={stat.label}
+              key={stat.highlight}
               className="flex flex-col items-center text-center"
             >
-              <stat.icon className="mb-3 h-8 w-8 text-primary-foreground/60" />
-              <div className="text-4xl font-bold">{stat.value}</div>
-              <div className="mt-2 text-sm text-primary-foreground/80">
+              <div className="flex size-11 items-center justify-center rounded-full bg-brand-100 text-brand-600">
+                <stat.icon className="h-5 w-5" />
+              </div>
+              <div className="mt-4 font-serif text-[30px] font-semibold leading-none text-brand-600 sm:text-[34px] lg:text-[38px]">
+                {stat.value}
+              </div>
+              <div className="mt-2 text-[15px] font-semibold text-navy-950">
                 {stat.highlight}
               </div>
               {stat.sublabel && (
-                <div className="text-xs text-primary-foreground/60">
-                  {stat.sublabel}
-                </div>
+                <div className="text-[13px] text-ink-500">{stat.sublabel}</div>
               )}
             </div>
           ))}

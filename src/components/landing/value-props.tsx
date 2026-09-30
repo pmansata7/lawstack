@@ -14,8 +14,7 @@ const VALUE_PROPS = [
   {
     icon: ShieldCheck,
     title: "Stronger pleadings",
-    description:
-      "Draft complaints designed to withstand dismissal.",
+    description: "Draft complaints designed to withstand dismissal.",
   },
   {
     icon: Clock,
@@ -32,16 +31,18 @@ const VALUE_PROPS = [
 
 export function ValueProps() {
   return (
-    <section className="border-y bg-muted/30">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <section className="border-y border-line bg-surface py-16 lg:py-20">
+      <div className="container-x">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {VALUE_PROPS.map((prop) => (
-            <div key={prop.title} className="flex flex-col gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <prop.icon className="h-6 w-6 text-primary" />
+            <div key={prop.title} className="group flex flex-col gap-3">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600 ring-1 ring-brand-200/60">
+                <prop.icon className="h-5 w-5" strokeWidth={2} />
               </div>
-              <h3 className="text-lg font-semibold">{prop.title}</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-navy-950">
+                {prop.title}
+              </h3>
+              <p className="text-[14px] leading-[1.6] text-ink-600">
                 {prop.description}
               </p>
             </div>

@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { CaseNav } from "@/components/cases/case-nav";
 import Link from "next/link";
-import { Scale } from "lucide-react";
+import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 
 export default async function CaseLayout({
@@ -26,14 +26,11 @@ export default async function CaseLayout({
 
   return (
     <div className="flex h-screen flex-col">
-      <header className="flex h-14 items-center justify-between border-b px-4">
+      <header className="flex h-14 items-center justify-between border-b border-line bg-white px-4">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <Scale className="h-5 w-5 text-primary" />
-            <span className="font-bold">Lawstack</span>
-          </Link>
-          <span className="text-muted-foreground">/</span>
-          <span className="font-medium">{caseData.title}</span>
+          <Logo href="/dashboard" showWordmark={false} />
+          <span className="text-ink-400">/</span>
+          <span className="font-medium text-navy-950">{caseData.title}</span>
         </div>
         <Button variant="ghost" size="sm" asChild>
           <Link href="/dashboard">Back to Dashboard</Link>
