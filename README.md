@@ -32,11 +32,16 @@ npm install
 
 ### 2. Set up environment variables
 
-Copy `.env.example` to `.env.local` and fill in your Supabase and AI provider credentials:
+Copy `.env.example` and fill in your Supabase and AI provider credentials.
+
+**Important:** Prisma reads **`.env`**, not `.env.local`. Next.js uses both. Copy to both files (or put `DATABASE_URL` / `DIRECT_URL` in `.env`):
 
 ```bash
+cp .env.example .env
 cp .env.example .env.local
 ```
+
+`DATABASE_URL` and `DIRECT_URL` must use the **`postgresql://`** scheme from Supabase **Database → Connection string → URI**. Do not use the HTTPS project URL (`https://….supabase.co`) or API keys as the database URL. URL-encode special characters in your database password.
 
 ### 3. Set up Supabase
 
