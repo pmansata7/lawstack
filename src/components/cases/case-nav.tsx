@@ -23,7 +23,7 @@ export function CaseNav({ caseId }: { caseId: string }) {
   const pathname = usePathname();
 
   return (
-    <div className="border-b bg-background">
+    <div className="border-b border-line bg-surface">
       <div className="mx-auto max-w-6xl px-4">
         <nav className="flex gap-1 overflow-x-auto">
           {STEPS.map((step) => {
@@ -35,10 +35,10 @@ export function CaseNav({ caseId }: { caseId: string }) {
                 key={step.href}
                 href={href}
                 className={cn(
-                  "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap",
+                  "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors",
                   isActive
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground",
+                    ? "border-brand-600 text-brand-600"
+                    : "border-transparent text-ink-500 hover:text-navy-950",
                 )}
               >
                 <step.icon className="h-4 w-4" />

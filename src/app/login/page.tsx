@@ -15,7 +15,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Scale, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { Logo } from "@/components/brand/logo";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -55,12 +56,11 @@ function LoginContent() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-hero-gradient px-4">
+      <Card className="w-full max-w-md border-line shadow-float">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex items-center gap-2">
-            <Scale className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">Lawstack</span>
+          <div className="mx-auto mb-2 flex justify-center">
+            <Logo />
           </div>
           <CardTitle>Sign In</CardTitle>
           <CardDescription>

@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Building2, Briefcase, Landmark } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Building2, Briefcase, Landmark, ChevronRight } from "lucide-react";
 
 const AUDIENCES = [
   {
@@ -31,37 +30,40 @@ const AUDIENCES = [
 
 export function Audiences() {
   return (
-    <section className="py-20">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="scroll-mt-20 bg-white py-20 lg:py-24">
+      <div className="container-x">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="heading-serif text-[36px] leading-[1.08] sm:text-[42px] lg:text-[46px]">
             A platform for every legal team.
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-5 text-pretty text-[16px] leading-[1.65] text-ink-600 lg:text-[17px]">
             Different users. A stronger justice system.
           </p>
         </div>
-        <div className="mt-12 grid gap-8 md:grid-cols-3">
+        <div className="mt-12 grid gap-6 md:grid-cols-3">
           {AUDIENCES.map((aud) => (
-            <Card key={aud.id} id={aud.id} className="flex flex-col">
-              <CardHeader>
-                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <aud.icon className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle>{aud.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-1 flex-col justify-between">
-                <p className="text-sm text-muted-foreground">
-                  {aud.description}
-                </p>
-                <Link
-                  href={`/signup?type=${aud.id}`}
-                  className="mt-4 text-sm font-medium text-primary hover:underline"
-                >
-                  {aud.cta} →
-                </Link>
-              </CardContent>
-            </Card>
+            <div
+              key={aud.id}
+              id={aud.id}
+              className="group flex flex-col rounded-xl border border-line bg-white p-6 shadow-[0_1px_2px_rgba(7,20,51,0.03)] transition-shadow duration-300 hover:shadow-[0_8px_24px_-8px_rgba(7,20,51,0.12)]"
+            >
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600 transition-colors group-hover:bg-brand-600 group-hover:text-white">
+                <aud.icon className="h-5 w-5" />
+              </div>
+              <h3 className="mt-5 font-serif text-[22px] font-semibold text-navy-950">
+                {aud.title}
+              </h3>
+              <p className="mt-2 flex-1 text-[14px] leading-[1.6] text-ink-600">
+                {aud.description}
+              </p>
+              <Link
+                href={`/signup?type=${aud.id}`}
+                className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-semibold text-brand-600 transition-colors hover:text-brand-700"
+              >
+                {aud.cta}
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </div>
           ))}
         </div>
       </div>

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Scale,
   LayoutDashboard,
   FolderOpen,
   Settings,
@@ -14,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { Logo } from "@/components/brand/logo";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -42,10 +42,9 @@ export function DashboardSidebar({
   };
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-muted/30">
-      <div className="flex h-16 items-center gap-2 border-b px-6">
-        <Scale className="h-6 w-6 text-primary" />
-        <span className="text-lg font-bold">Lawstack</span>
+    <aside className="flex h-screen w-64 flex-col border-r border-line bg-surface">
+      <div className="flex h-16 items-center border-b border-line px-6">
+        <Logo href="/dashboard" />
       </div>
 
       <nav className="flex-1 space-y-1 p-4">
@@ -58,10 +57,10 @@ export function DashboardSidebar({
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  ? "bg-brand-600 text-white shadow-[0_4px_12px_-4px_rgba(0,88,232,0.45)]"
+                  : "text-ink-600 hover:bg-brand-50 hover:text-navy-950",
               )}
             >
               <item.icon className="h-4 w-4" />
@@ -71,22 +70,22 @@ export function DashboardSidebar({
         })}
       </nav>
 
-      <div className="border-t p-4">
-        <div className="mb-3 rounded-md border bg-background p-3">
-          <p className="text-sm font-semibold">{orgName}</p>
-          <p className="text-xs text-muted-foreground">
+      <div className="border-t border-line p-4">
+        <div className="mb-3 rounded-lg border border-line bg-white p-3">
+          <p className="text-sm font-semibold text-navy-950">{orgName}</p>
+          <p className="text-xs text-ink-500">
             {orgType === "LAW_FIRM"
               ? "Law Firm"
               : orgType === "IN_HOUSE"
                 ? "In-House Legal"
                 : "Court"}
           </p>
-          <p className="mt-1 truncate text-xs text-muted-foreground">{email}</p>
+          <p className="mt-1 truncate text-xs text-ink-500">{email}</p>
         </div>
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start"
+          className="w-full justify-start text-ink-600 hover:bg-brand-50 hover:text-navy-950"
           onClick={handleLogout}
         >
           <LogOut className="mr-2 h-4 w-4" />
