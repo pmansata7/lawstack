@@ -83,6 +83,7 @@ export default function NewCasePage() {
       const { caseId } = await res.json();
       toast.success("Case created successfully");
       router.push(`/cases/${caseId}/setup`);
+      router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to create case");
     } finally {

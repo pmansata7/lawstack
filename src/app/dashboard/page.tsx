@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,21 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, FileText, FolderOpen, Brain, PenLine } from "lucide-react";
+
+const dashboardCaseInclude = {
+  _count: {
+    select: {
+      facts: true,
+      evidence: true,
+      drafts: true,
+      analyses: true,
+    },
+  },
+} satisfies Prisma.CaseInclude;
+
+type DashboardCase = Prisma.CaseGetPayload<{
+  include: typeof dashboardCaseInclude;
+}>;
 
 const STATUS_LABELS: Record<string, string> = {
   SETUP: "Setting Up",
@@ -35,23 +51,28 @@ export default async function DashboardPage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const cases = await prisma.case.findMany({
-    where: { organizationId: session.orgId },
-    orderBy: { updatedAt: "desc" },
-    include: {
-      _count: {
-        select: {
-          facts: true,
-          evidence: true,
-          drafts: true,
-          analyses: true,
-        },
-      },
-    },
-  });
+  let cases: DashboardCase[] = [];
+  let loadError: string | null = null;
+
+  try {
+    cases = await prisma.case.findMany({
+      where: { organizationId: session.orgId },
+      orderBy: { updatedAt: "desc" },
+      include: dashboardCaseInclude,
+    });
+  } catch (error) {
+    console.error("Dashboard cases load error:", error);
+    loadError =
+      "Could not load cases. Confirm the database schema is up to date (run `npx prisma db push`).";
+  }
 
   return (
     <div className="p-8">
+      {loadError && (
+        <p className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {loadError}
+        </p>
+      )}
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="font-serif text-2xl font-semibold text-navy-950">
@@ -88,7 +109,7 @@ export default async function DashboardPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {cases.map((c) => (
-            <Link key={c.id} href={`/cases/${c.id}`}>
+            <Link key={c.id} href={`/cases/${c.id}/setup`}>
               <Card className="cursor-pointer border-line transition-shadow hover:shadow-[0_8px_24px_-8px_rgba(7,20,51,0.12)]">
                 <CardHeader>
                   <div className="flex items-start justify-between">

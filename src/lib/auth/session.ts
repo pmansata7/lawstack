@@ -16,28 +16,39 @@ export async function getSession(): Promise<SessionUser | null> {
     return null;
   }
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-  if (!user) return null;
+    if (authError) {
+      console.error("getSession auth error:", authError);
+      return null;
+    }
 
-  const member = await prisma.orgMember.findFirst({
-    where: { userId: user.id },
-    include: { organization: true },
-  });
+    if (!user) return null;
 
-  if (!member) return null;
+    const member = await prisma.orgMember.findFirst({
+      where: { userId: user.id },
+      include: { organization: true },
+    });
 
-  return {
-    id: user.id,
-    email: user.email ?? member.email,
-    orgId: member.organizationId,
-    orgName: member.organization.name,
-    orgType: member.organization.type,
-    role: member.role,
-  };
+    if (!member) return null;
+
+    return {
+      id: user.id,
+      email: user.email ?? member.email,
+      orgId: member.organizationId,
+      orgName: member.organization.name,
+      orgType: member.organization.type,
+      role: member.role,
+    };
+  } catch (error) {
+    console.error("getSession error:", error);
+    return null;
+  }
 }
 
 export async function requireSession(): Promise<SessionUser> {

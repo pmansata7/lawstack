@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
+import { getCaseForOrganization } from "@/lib/cases/get-case-for-org";
 import { CaseNav } from "@/components/cases/case-nav";
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
@@ -18,9 +18,13 @@ export default async function CaseLayout({
 
   const { id } = await params;
 
-  const caseData = await prisma.case.findFirst({
-    where: { id, organizationId: session.orgId },
-  });
+  let caseData;
+  try {
+    caseData = await getCaseForOrganization(id, session.orgId);
+  } catch (error) {
+    console.error("Case layout load error:", error);
+    throw error;
+  }
 
   if (!caseData) redirect("/dashboard");
 
