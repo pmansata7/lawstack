@@ -25,6 +25,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { toast } from "sonner";
+import { getAuthCallbackUrl } from "@/lib/auth/site-url";
 
 const ORG_TYPES = [
   { value: "LAW_FIRM", label: "Law Firm" },
@@ -71,6 +72,7 @@ function SignupContent() {
       email: formData.email,
       password: formData.password,
       options: {
+        emailRedirectTo: getAuthCallbackUrl("/dashboard"),
         data: {
           full_name: formData.fullName,
           org_name: formData.orgName,

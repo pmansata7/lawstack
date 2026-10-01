@@ -48,8 +48,12 @@ cp .env.example .env.local
 1. Create a new project at [supabase.com](https://supabase.com)
 2. Get your Project URL and anon key from Settings > API
 3. Get your database connection string from Settings > Database
-4. Create a storage bucket named `evidence` (public)
-5. Run the Prisma migration:
+4. **Authentication → URL Configuration**
+   - **Site URL**: your app origin (e.g. `https://your-app.vercel.app` or `http://localhost:3000` for local dev). Do **not** use the `*.supabase.co` project URL here.
+   - **Redirect URLs**: add `http://localhost:3000/auth/callback` and `https://your-app.vercel.app/auth/callback` (and any preview domains you use).
+5. Set `NEXT_PUBLIC_SITE_URL` in Vercel to the same origin as Site URL (used when building email confirmation links).
+6. Create a storage bucket named `evidence` (public)
+7. Run the Prisma migration:
 
 ```bash
 npx prisma db push
