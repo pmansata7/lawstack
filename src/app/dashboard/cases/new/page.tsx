@@ -59,6 +59,7 @@ export default function NewCasePage() {
     try {
       const res = await fetch("/api/cases", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...caseData,

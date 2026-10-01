@@ -65,8 +65,28 @@ CREATE POLICY "members_can_read_claims" ON claims
     )
   );
 
-CREATE POLICY "members_can_modify_claims" ON claims
-  FOR ALL USING (
+DROP POLICY IF EXISTS "members_can_modify_claims" ON claims;
+
+CREATE POLICY "members_can_insert_claims" ON claims
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM cases c
+      JOIN org_members m ON m.organization_id = c.organization_id
+      WHERE c.id = claims.case_id AND m.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "members_can_update_claims" ON claims
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM cases c
+      JOIN org_members m ON m.organization_id = c.organization_id
+      WHERE c.id = claims.case_id AND m.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "members_can_delete_claims" ON claims
+  FOR DELETE USING (
     EXISTS (
       SELECT 1 FROM cases c
       JOIN org_members m ON m.organization_id = c.organization_id

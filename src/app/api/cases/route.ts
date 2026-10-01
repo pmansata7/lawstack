@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
+import {
+  createCaseWithClaims,
+  getCreateCaseErrorMessage,
+  type CreateCaseClaimInput,
+} from "@/lib/cases/create-case";
+
+function parseClaims(raw: unknown): CreateCaseClaimInput[] | null {
+  if (raw === undefined || raw === null) {
+    return [];
+  }
+  if (!Array.isArray(raw)) {
+    return null;
+  }
+  return raw as CreateCaseClaimInput[];
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,43 +25,58 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, courtType, jurisdiction, courtName, caseNumber, plaintiff, defendant, opposingParty, claims } = body;
+    const {
+      title,
+      courtType,
+      jurisdiction,
+      courtName,
+      caseNumber,
+      plaintiff,
+      defendant,
+      opposingParty,
+      claims: rawClaims,
+    } = body;
 
-    if (!title || !jurisdiction) {
+    if (!title?.trim() || !jurisdiction) {
       return NextResponse.json(
         { error: "Title and jurisdiction are required" },
         { status: 400 },
       );
     }
 
-    const newCase = await prisma.case.create({
-      data: {
-        organizationId: session.orgId,
-        title,
-        courtType: courtType ?? "FEDERAL",
-        jurisdiction,
-        courtName,
-        caseNumber,
-        plaintiff,
-        defendant,
-        opposingParty,
-        status: "FACTS",
-        claims: {
-          create: claims?.map((c: { claimType: string; jurisdiction: string; elements: unknown }) => ({
-            claimType: c.claimType,
-            jurisdiction: c.jurisdiction,
-            elements: c.elements,
-          })) ?? [],
-        },
-      },
-      include: { claims: true },
+    const claims = parseClaims(rawClaims);
+    if (claims === null) {
+      return NextResponse.json(
+        { error: "Claims must be an array" },
+        { status: 400 },
+      );
+    }
+
+    if (courtType && courtType !== "STATE" && courtType !== "FEDERAL") {
+      return NextResponse.json(
+        { error: "Invalid court type" },
+        { status: 400 },
+      );
+    }
+
+    const newCase = await createCaseWithClaims({
+      organizationId: session.orgId,
+      title,
+      courtType,
+      jurisdiction,
+      courtName,
+      caseNumber,
+      plaintiff,
+      defendant,
+      opposingParty,
+      claims,
     });
 
     return NextResponse.json({ caseId: newCase.id, case: newCase });
   } catch (error) {
     console.error("Create case error:", error);
     return NextResponse.json(
-      { error: "Failed to create case" },
+      { error: getCreateCaseErrorMessage(error) },
       { status: 500 },
     );
   }
