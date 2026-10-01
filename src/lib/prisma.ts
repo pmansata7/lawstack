@@ -1,7 +1,21 @@
 import { PrismaClient } from "@prisma/client";
+import { getRuntimeDatabaseUrl } from "@/lib/prisma/database-url";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+function createPrismaClient() {
+  const url = getRuntimeDatabaseUrl();
+  return new PrismaClient(
+    url
+      ? {
+          datasources: {
+            db: { url },
+          },
+        }
+      : undefined,
+  );
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+
+globalForPrisma.prisma = prisma;

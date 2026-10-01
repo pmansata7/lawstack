@@ -1,5 +1,9 @@
 import { Prisma, type Case, type Claim } from "@prisma/client";
 import type { CaseCourtType } from "@/lib/legal/claim-templates";
+import {
+  isPreparedStatementPoolerError,
+  PGBOUNCER_DATABASE_HINT,
+} from "@/lib/prisma/database-url";
 import { prisma } from "@/lib/prisma";
 
 export type CreateCaseClaimInput = {
@@ -90,6 +94,9 @@ export function getCreateCaseErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
     if (error.message.includes("row-level security")) {
       return "Database security policy blocked case creation. Verify DATABASE_URL uses the Supabase Postgres role.";
+    }
+    if (isPreparedStatementPoolerError(error)) {
+      return PGBOUNCER_DATABASE_HINT;
     }
     return error.message;
   }
