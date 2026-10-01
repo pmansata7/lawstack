@@ -1,12 +1,30 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getSupabaseConfig } from "@/lib/supabase/config";
+
+const protectedPaths = ["/dashboard", "/cases", "/settings"];
+const authPaths = ["/login", "/signup"];
 
 export async function updateSession(request: NextRequest) {
+  const supabaseConfig = getSupabaseConfig();
+  if (!supabaseConfig) {
+    const isProtected = protectedPaths.some((p) =>
+      request.nextUrl.pathname.startsWith(p),
+    );
+    if (isProtected) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("error", "config");
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseConfig.url,
+    supabaseConfig.anonKey,
     {
       cookies: {
         getAll() {
@@ -29,8 +47,6 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protected routes — redirect to login if not authenticated
-  const protectedPaths = ["/dashboard", "/cases", "/settings"];
   const isProtected = protectedPaths.some((p) =>
     request.nextUrl.pathname.startsWith(p),
   );
@@ -42,8 +58,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect to dashboard if already logged in and on auth pages
-  const authPaths = ["/login", "/signup"];
   if (user && authPaths.includes(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";

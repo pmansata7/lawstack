@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { prisma } from "@/lib/prisma";
 
 export interface SessionUser {
@@ -11,6 +12,10 @@ export interface SessionUser {
 }
 
 export async function getSession(): Promise<SessionUser | null> {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
