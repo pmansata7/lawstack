@@ -77,7 +77,7 @@ npm run build
 
 1. Push your code to GitHub
 2. Import the project in Vercel
-3. In **Project → Settings → Environment Variables**, add the variables from `.env.example` (at minimum `DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_ANON_KEY`, plus your AI provider keys)
+3. In **Project → Settings → Environment Variables**, add the variables from `.env.example` (at minimum `DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`, plus your AI provider keys). Missing Supabase vars cause every page to fail in middleware until they are set.
 4. Deploy
 
 ## Project Structure

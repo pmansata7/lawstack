@@ -35,6 +35,12 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (searchParams.get("error") === "config") {
+      toast.error(
+        "Authentication is not configured on the server. Add Supabase environment variables in Vercel (or .env.local for local dev).",
+      );
+      return;
+    }
     if (searchParams.get("error") === "auth") {
       const message =
         searchParams.get("message") ??
