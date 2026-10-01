@@ -39,7 +39,7 @@ function LoginContent() {
     setLoading(true);
 
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -48,6 +48,27 @@ function LoginContent() {
       toast.error(error.message);
       setLoading(false);
       return;
+    }
+
+    if (data.user && data.session) {
+      try {
+        await fetch("/api/auth/signup", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${data.session.access_token}`,
+          },
+          body: JSON.stringify({
+            userId: data.user.id,
+            email: data.user.email ?? email,
+            orgName: data.user.user_metadata?.org_name,
+            orgType: data.user.user_metadata?.org_type,
+          }),
+        });
+      } catch {
+        // Org may already exist; dashboard will still load if provision succeeded earlier
+      }
     }
 
     toast.success("Signed in successfully");

@@ -1,53 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
+import { getRequestUser } from "@/lib/auth/get-request-user";
+import { provisionOrganizationForUser } from "@/lib/auth/provision-organization";
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, email, fullName, orgName, orgType } = await req.json();
+    const { userId, email, orgName, orgType } = await req.json();
 
-    if (!userId || !email || !orgName) {
+    if (!userId || !email) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
       );
     }
 
-    const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getRequestUser(req, userId);
 
-    if (!user || user.id !== userId) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Create organization
-    const org = await prisma.organization.create({
-      data: {
-        name: orgName,
-        type: orgType ?? "LAW_FIRM",
-      },
+    const resolvedOrgName =
+      orgName ?? (user.user_metadata?.org_name as string | undefined);
+
+    if (!resolvedOrgName) {
+      return NextResponse.json(
+        { error: "Organization name is required" },
+        { status: 400 },
+      );
+    }
+
+    const resolvedOrgType =
+      orgType ?? (user.user_metadata?.org_type as string | undefined);
+
+    const resolvedEmail = user.email ?? email;
+
+    const result = await provisionOrganizationForUser({
+      userId,
+      email: resolvedEmail,
+      orgName: resolvedOrgName,
+      orgType: resolvedOrgType,
     });
 
-    // Create org member as owner
-    await prisma.orgMember.create({
-      data: {
-        organizationId: org.id,
-        userId,
-        email,
-        role: "OWNER",
-      },
-    });
-
-    // Create default AI settings
-    await prisma.aiSetting.create({
-      data: {
-        organizationId: org.id,
-      },
-    });
-
-    return NextResponse.json({ orgId: org.id });
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Signup error:", error);
     return NextResponse.json(

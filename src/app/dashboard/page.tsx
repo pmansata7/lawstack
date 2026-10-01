@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,7 +33,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default async function DashboardPage() {
   const session = await getSession();
-  if (!session) return null;
+  if (!session) redirect("/login");
 
   const cases = await prisma.case.findMany({
     where: { organizationId: session.orgId },

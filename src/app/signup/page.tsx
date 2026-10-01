@@ -43,12 +43,20 @@ export default function SignupPage() {
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const audienceParam = searchParams.get("type");
+  const initialOrgType =
+    audienceParam === "courts"
+      ? "COURT"
+      : audienceParam === "in-house"
+        ? "IN_HOUSE"
+        : "LAW_FIRM";
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     fullName: "",
     orgName: "",
-    orgType: "LAW_FIRM" as string,
+    orgType: initialOrgType,
   });
   const [loading, setLoading] = useState(false);
 
@@ -77,41 +85,64 @@ function SignupContent() {
       return;
     }
 
-    // 2. Create organization via API route
-    if (data.user) {
-      try {
-        const res = await fetch("/api/auth/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: data.user.id,
-            email: formData.email,
-            fullName: formData.fullName,
-            orgName: formData.orgName,
-            orgType: formData.orgType,
-          }),
-        });
+    if (data.user?.identities?.length === 0) {
+      toast.error(
+        "An account with this email already exists. Please sign in instead.",
+      );
+      setLoading(false);
+      return;
+    }
 
-        if (!res.ok) {
-          const err = await res.json();
-          toast.error(err.error ?? "Failed to create organization");
-          setLoading(false);
-          return;
-        }
-      } catch {
-        toast.error("Failed to set up organization");
+    if (!data.user) {
+      toast.error("Unable to create account. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    // Email confirmation enabled — org is created after the user confirms and signs in
+    if (!data.session) {
+      toast.success(
+        "Check your email to confirm your account, then sign in to continue.",
+      );
+      router.push("/login");
+      setLoading(false);
+      return;
+    }
+
+    // 2. Create organization via API route (Bearer token — session cookies may not be set yet)
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${data.session.access_token}`,
+        },
+        body: JSON.stringify({
+          userId: data.user.id,
+          email: formData.email,
+          fullName: formData.fullName,
+          orgName: formData.orgName,
+          orgType: formData.orgType,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error ?? "Failed to create organization");
         setLoading(false);
         return;
       }
+    } catch {
+      toast.error("Failed to set up organization");
+      setLoading(false);
+      return;
     }
 
     toast.success("Account created successfully");
     router.push("/dashboard");
     router.refresh();
   };
-
-  const audienceParam = searchParams.get("type");
-  const initialOrgType = audienceParam === "courts" ? "COURT" : audienceParam === "in-house" ? "IN_HOUSE" : "LAW_FIRM";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-hero-gradient px-4 py-12">
@@ -154,13 +185,13 @@ function SignupContent() {
             <div className="space-y-2">
               <Label htmlFor="orgType">Organization Type</Label>
               <Select
-                defaultValue={initialOrgType}
+                value={formData.orgType}
                 onValueChange={(v: string | null) =>
                   setFormData({ ...formData, orgType: v ?? "LAW_FIRM" })
                 }
               >
-                <SelectTrigger id="orgType">
-                  <SelectValue />
+                <SelectTrigger id="orgType" className="w-full">
+                  <SelectValue placeholder="Select organization type" />
                 </SelectTrigger>
                 <SelectContent>
                   {ORG_TYPES.map((t) => (
