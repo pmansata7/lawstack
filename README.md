@@ -43,6 +43,8 @@ cp .env.example .env.local
 
 `DATABASE_URL` and `DIRECT_URL` must use the **`postgresql://`** scheme from Supabase **Database → Connection string → URI**. Do not use the HTTPS project URL (`https://….supabase.co`) or API keys as the database URL. URL-encode special characters in your database password.
 
+For Supabase **Transaction pooler** (port **6543**), `DATABASE_URL` **must** include **`?pgbouncer=true`**. Without it, Prisma triggers Postgres error `42P05` (`prepared statement already exists`) at runtime. The app auto-appends this flag when it detects the Supabase pooler host, but you should still set it explicitly in Vercel.
+
 ### 3. Set up Supabase
 
 1. Create a new project at [supabase.com](https://supabase.com)
