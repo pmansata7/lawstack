@@ -24,8 +24,9 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowRight, ArrowLeft, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import {
-  CLAIM_TEMPLATES,
-  JURISDICTIONS,
+  getClaimTemplatesForCourtType,
+  getJurisdictionsForCourtType,
+  type CaseCourtType,
   type ClaimTemplate,
 } from "@/lib/legal/claim-templates";
 
@@ -38,7 +39,7 @@ export default function NewCasePage() {
 
   const [caseData, setCaseData] = useState({
     title: "",
-    courtType: "FEDERAL" as "STATE" | "FEDERAL",
+    courtType: "FEDERAL" as CaseCourtType,
     jurisdiction: "",
     courtName: "",
     caseNumber: "",
@@ -49,10 +50,8 @@ export default function NewCasePage() {
 
   const [selectedClaims, setSelectedClaims] = useState<ClaimTemplate[]>([]);
 
-  const jurisdictions =
-    caseData.courtType === "FEDERAL"
-      ? JURISDICTIONS.federal
-      : JURISDICTIONS.state;
+  const jurisdictions = getJurisdictionsForCourtType(caseData.courtType);
+  const availableClaims = getClaimTemplatesForCourtType(caseData.courtType);
 
   const handleCreate = async () => {
     setLoading(true);
@@ -142,13 +141,14 @@ export default function NewCasePage() {
                 <Label htmlFor="courtType">Court Type</Label>
                 <Select
                   value={caseData.courtType}
-                  onValueChange={(v: string | null) =>
+                  onValueChange={(v: string | null) => {
                     setCaseData({
                       ...caseData,
-                      courtType: (v ?? "FEDERAL") as "STATE" | "FEDERAL",
+                      courtType: (v ?? "FEDERAL") as CaseCourtType,
                       jurisdiction: "",
-                    })
-                  }
+                    });
+                    setSelectedClaims([]);
+                  }}
                 >
                   <SelectTrigger id="courtType">
                     <SelectValue />
@@ -156,6 +156,7 @@ export default function NewCasePage() {
                   <SelectContent>
                     <SelectItem value="FEDERAL">Federal Court</SelectItem>
                     <SelectItem value="STATE">State Court</SelectItem>
+                    <SelectItem value="SMALL_CLAIMS">Small Claims Court</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -251,6 +252,8 @@ export default function NewCasePage() {
             <CardDescription>
               Select the causes of action for this case. Each claim has
               pre-built legal elements that will guide your fact organization.
+              {caseData.courtType === "SMALL_CLAIMS" &&
+                " Small claims templates are tailored to common limited-jurisdiction disputes."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -286,7 +289,7 @@ export default function NewCasePage() {
             <div className="space-y-2">
               <Label>Available Claim Types</Label>
               <div className="max-h-96 space-y-2 overflow-y-auto">
-                {CLAIM_TEMPLATES.map((c) => {
+                {availableClaims.map((c) => {
                   const isSelected = selectedClaims.some(
                     (s) => s.type === c.type,
                   );

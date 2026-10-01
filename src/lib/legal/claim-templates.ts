@@ -7,12 +7,55 @@ export interface ClaimElement {
   description: string;
 }
 
+export type CaseCourtType = "STATE" | "FEDERAL" | "SMALL_CLAIMS";
+
 export interface ClaimTemplate {
   type: string;
   label: string;
   category: string;
   elements: ClaimElement[];
   description: string;
+  /** When set, the template is only offered for these court types. */
+  courtTypes?: CaseCourtType[];
+}
+
+export function getCourtTypeLabel(courtType: CaseCourtType): string {
+  switch (courtType) {
+    case "FEDERAL":
+      return "Federal";
+    case "STATE":
+      return "State";
+    case "SMALL_CLAIMS":
+      return "Small Claims";
+  }
+}
+
+export function getJurisdictionsForCourtType(courtType: CaseCourtType) {
+  if (courtType === "FEDERAL") return JURISDICTIONS.federal;
+  if (courtType === "SMALL_CLAIMS") return JURISDICTIONS.smallClaims;
+  return JURISDICTIONS.state;
+}
+
+const SMALL_CLAIMS_COMMON_TYPES = new Set([
+  "breach_of_contract",
+  "unjust_enrichment",
+  "conversion",
+  "fraud",
+  "premises_liability",
+  "nuisance",
+]);
+
+export function getClaimTemplatesForCourtType(
+  courtType: CaseCourtType,
+): ClaimTemplate[] {
+  if (courtType === "SMALL_CLAIMS") {
+    return CLAIM_TEMPLATES.filter(
+      (template) =>
+        template.courtTypes?.includes("SMALL_CLAIMS") ||
+        SMALL_CLAIMS_COMMON_TYPES.has(template.type),
+    );
+  }
+  return CLAIM_TEMPLATES.filter((template) => !template.courtTypes);
 }
 
 export const CLAIM_TEMPLATES: ClaimTemplate[] = [
@@ -210,6 +253,86 @@ export const CLAIM_TEMPLATES: ClaimTemplate[] = [
       { element: "Damages", description: "Plaintiff suffered damages." },
     ],
   },
+  {
+    type: "money_owed",
+    label: "Money Owed / Unpaid Debt",
+    category: "Small Claims",
+    description: "Recovery of money lent, unpaid invoices, or other sums due.",
+    courtTypes: ["SMALL_CLAIMS"],
+    elements: [
+      { element: "Agreement or Loan", description: "Defendant agreed to pay or borrowed money from plaintiff." },
+      { element: "Performance or Delivery", description: "Plaintiff provided goods, services, or funds as agreed." },
+      { element: "Amount Due", description: "A specific sum remains unpaid." },
+      { element: "Demand", description: "Plaintiff demanded payment and defendant failed to pay." },
+    ],
+  },
+  {
+    type: "security_deposit",
+    label: "Security Deposit Dispute",
+    category: "Small Claims",
+    description: "Wrongful withholding of a residential security deposit.",
+    courtTypes: ["SMALL_CLAIMS"],
+    elements: [
+      { element: "Tenancy", description: "Plaintiff was a tenant and defendant was the landlord." },
+      { element: "Deposit Paid", description: "Plaintiff paid a security deposit." },
+      { element: "Lawful Termination", description: "The tenancy ended and plaintiff vacated in compliance with the lease." },
+      { element: "Wrongful Withholding", description: "Defendant withheld deposit amounts without lawful deductions." },
+      { element: "Damages", description: "Plaintiff is entitled to the wrongfully withheld amount (and statutory penalties if applicable)." },
+    ],
+  },
+  {
+    type: "defective_goods_services",
+    label: "Defective Goods or Services",
+    category: "Small Claims",
+    description: "Failure to deliver goods or services as promised.",
+    courtTypes: ["SMALL_CLAIMS"],
+    elements: [
+      { element: "Agreement", description: "Parties agreed plaintiff would pay for specific goods or services." },
+      { element: "Payment or Consideration", description: "Plaintiff paid or provided consideration." },
+      { element: "Defect or Non-Performance", description: "Goods were defective or services were not performed as promised." },
+      { element: "Notice", description: "Plaintiff notified defendant of the problem." },
+      { element: "Damages", description: "Plaintiff suffered financial loss." },
+    ],
+  },
+  {
+    type: "vehicle_property_damage",
+    label: "Vehicle or Property Damage",
+    category: "Small Claims",
+    description: "Property damage from accidents, negligence, or intentional acts.",
+    courtTypes: ["SMALL_CLAIMS"],
+    elements: [
+      { element: "Ownership", description: "Plaintiff owned or had an interest in the damaged property." },
+      { element: "Defendant's Conduct", description: "Defendant damaged the property through negligence or wrongful acts." },
+      { element: "Causation", description: "Defendant's conduct caused the damage." },
+      { element: "Repair or Value", description: "Plaintiff incurred repair costs or lost property value." },
+    ],
+  },
+  {
+    type: "landlord_tenant",
+    label: "Landlord-Tenant Dispute (Rent / Repairs)",
+    category: "Small Claims",
+    description: "Disputes over rent, habitability, or repair obligations.",
+    courtTypes: ["SMALL_CLAIMS"],
+    elements: [
+      { element: "Landlord-Tenant Relationship", description: "A landlord-tenant relationship existed." },
+      { element: "Obligation", description: "Defendant failed a rent, repair, or habitability obligation." },
+      { element: "Notice", description: "Plaintiff gave reasonable notice where required." },
+      { element: "Damages", description: "Plaintiff suffered financial harm (e.g., unpaid rent, repair costs, or rent abatement)." },
+    ],
+  },
+  {
+    type: "small_claims_negligence",
+    label: "Personal Injury (Small Claims)",
+    category: "Small Claims",
+    description: "Minor injuries and medical expenses within small claims limits.",
+    courtTypes: ["SMALL_CLAIMS"],
+    elements: [
+      { element: "Duty of Care", description: "Defendant owed plaintiff a duty of reasonable care." },
+      { element: "Breach", description: "Defendant failed to exercise reasonable care." },
+      { element: "Causation", description: "Defendant's conduct caused plaintiff's injury." },
+      { element: "Damages", description: "Plaintiff suffered medical bills or other compensable harm within jurisdictional limits." },
+    ],
+  },
 ];
 
 export const JURISDICTIONS = {
@@ -244,6 +367,20 @@ export const JURISDICTIONS = {
     { value: "co-district", label: "Colorado District Court" },
     { value: "fl-circuit", label: "Florida Circuit Court" },
     { value: "ga-superior", label: "Georgia Superior Court" },
+  ],
+  smallClaims: [
+    { value: "ca-small-claims", label: "California Small Claims Court" },
+    { value: "ny-small-claims", label: "New York City Civil Court (Small Claims)" },
+    { value: "il-small-claims", label: "Illinois Small Claims Court" },
+    { value: "tx-small-claims", label: "Texas Justice Court (Small Claims)" },
+    { value: "ma-small-claims", label: "Massachusetts Small Claims Court" },
+    { value: "nv-small-claims", label: "Nevada Small Claims Court" },
+    { value: "az-small-claims", label: "Arizona Small Claims Court" },
+    { value: "wa-small-claims", label: "Washington Small Claims Court" },
+    { value: "or-small-claims", label: "Oregon Small Claims Court" },
+    { value: "co-small-claims", label: "Colorado County Court (Small Claims)" },
+    { value: "fl-small-claims", label: "Florida County Court (Small Claims)" },
+    { value: "ga-small-claims", label: "Georgia Magistrate Court (Small Claims)" },
   ],
 };
 

@@ -101,7 +101,12 @@ export default async function DashboardPage() {
                     </Badge>
                   </div>
                   <CardDescription>
-                    {c.courtType === "FEDERAL" ? "Federal" : "State"} Court —{" "}
+                    {c.courtType === "FEDERAL"
+                      ? "Federal"
+                      : c.courtType === "SMALL_CLAIMS"
+                        ? "Small Claims"
+                        : "State"}{" "}
+                    Court —{" "}
                     {c.jurisdiction}
                   </CardDescription>
                 </CardHeader>
