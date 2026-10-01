@@ -50,7 +50,7 @@ export interface Database {
           id: string;
           organization_id: string;
           title: string;
-          court_type: "STATE" | "FEDERAL";
+          court_type: "STATE" | "FEDERAL" | "SMALL_CLAIMS";
           jurisdiction: string;
           case_number: string | null;
           court_name: string | null;
@@ -82,7 +82,7 @@ export interface Database {
     Enums: {
       org_type: "LAW_FIRM" | "IN_HOUSE" | "COURT";
       org_role: "OWNER" | "ADMIN" | "ATTORNEY" | "PARALEGAL" | "VIEWER";
-      court_type: "STATE" | "FEDERAL";
+      court_type: "STATE" | "FEDERAL" | "SMALL_CLAIMS";
       case_status: "SETUP" | "FACTS" | "ANALYSIS" | "DRAFTING" | "REVIEW" | "FILED";
     };
   };
