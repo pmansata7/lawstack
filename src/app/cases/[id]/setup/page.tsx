@@ -1,13 +1,17 @@
 import { getSession } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { getCaseForOrganization } from "@/lib/cases/get-case-for-org";
+import { notFound, redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, FileText, Gavel } from "lucide-react";
-import { getCourtTypeLabel, type CaseCourtType } from "@/lib/legal/claim-templates";
+import { ArrowRight, Gavel } from "lucide-react";
+import type { ReactNode } from "react";
+import {
+  getClaimLabel,
+  getCourtTypeLabel,
+  type CaseCourtType,
+} from "@/lib/legal/claim-templates";
 
 export default async function CaseSetupPage({
   params,
@@ -15,12 +19,11 @@ export default async function CaseSetupPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await getSession();
-  if (!session) return null;
+  if (!session) redirect("/login");
   const { id } = await params;
 
-  const caseData = await prisma.case.findFirst({
-    where: { id, organizationId: session.orgId },
-    include: { claims: true },
+  const caseData = await getCaseForOrganization(id, session.orgId, {
+    claims: true,
   });
 
   if (!caseData) notFound();
@@ -49,7 +52,7 @@ export default async function CaseSetupPage({
               label="Opposing Party"
               value={caseData.opposingParty ?? "—"}
             />
-            <Separator />
+            <hr className="my-2 border-border" />
             <DetailRow
               label="Status"
               value={
@@ -74,7 +77,9 @@ export default async function CaseSetupPage({
                 <div key={claim.id} className="rounded-lg border p-3">
                   <div className="flex items-center gap-2">
                     <Gavel className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{claim.claimType}</span>
+                    <span className="font-medium">
+                      {getClaimLabel(claim.claimType)}
+                    </span>
                   </div>
                   <div className="mt-2 space-y-1">
                     {elements?.map((e) => (
@@ -113,7 +118,7 @@ function DetailRow({
   value,
 }: {
   label: string;
-  value: React.ReactNode;
+  value: ReactNode;
 }) {
   return (
     <div className="flex justify-between">

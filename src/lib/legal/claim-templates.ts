@@ -335,6 +335,13 @@ export const CLAIM_TEMPLATES: ClaimTemplate[] = [
   },
 ];
 
+export function getClaimLabel(claimType: string): string {
+  return (
+    CLAIM_TEMPLATES.find((template) => template.type === claimType)?.label ??
+    claimType
+  );
+}
+
 export const JURISDICTIONS = {
   federal: [
     { value: "federal-northern-district-ca", label: "Northern District of California" },
