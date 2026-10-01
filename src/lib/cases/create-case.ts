@@ -1,4 +1,5 @@
 import { Prisma, type Case, type Claim } from "@prisma/client";
+import type { CaseCourtType } from "@/lib/legal/claim-templates";
 import { prisma } from "@/lib/prisma";
 
 export type CreateCaseClaimInput = {
@@ -10,7 +11,7 @@ export type CreateCaseClaimInput = {
 export type CreateCaseInput = {
   organizationId: string;
   title: string;
-  courtType?: "STATE" | "FEDERAL";
+  courtType?: CaseCourtType;
   jurisdiction: string;
   courtName?: string | null;
   caseNumber?: string | null;

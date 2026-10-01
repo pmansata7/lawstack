@@ -29,6 +29,7 @@ import {
   type CaseCourtType,
   type ClaimTemplate,
 } from "@/lib/legal/claim-templates";
+import { getAuthFetchHeaders } from "@/lib/auth/auth-fetch-headers";
 
 type Step = "case" | "claims";
 
@@ -56,10 +57,11 @@ export default function NewCasePage() {
   const handleCreate = async () => {
     setLoading(true);
     try {
+      const headers = await getAuthFetchHeaders();
       const res = await fetch("/api/cases", {
         method: "POST",
         credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           ...caseData,
           claims: selectedClaims.map((c) => ({
