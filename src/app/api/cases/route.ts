@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/session";
+import { getSessionFromRequest } from "@/lib/auth/session-from-request";
 import { prisma } from "@/lib/prisma";
+import type { CaseCourtType } from "@/lib/legal/claim-templates";
 import {
   createCaseWithClaims,
   getCreateCaseErrorMessage,
@@ -17,11 +18,19 @@ function parseClaims(raw: unknown): CreateCaseClaimInput[] | null {
   return raw as CreateCaseClaimInput[];
 }
 
+const VALID_COURT_TYPES = new Set<string>(["STATE", "FEDERAL", "SMALL_CLAIMS"]);
+
 export async function POST(req: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSessionFromRequest(req);
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        {
+          error:
+            "Unauthorized. Sign in again, or finish account setup if you just confirmed your email.",
+        },
+        { status: 401 },
+      );
     }
 
     const body = await req.json();
@@ -52,7 +61,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (courtType && courtType !== "STATE" && courtType !== "FEDERAL") {
+    if (courtType && !VALID_COURT_TYPES.has(courtType)) {
       return NextResponse.json(
         { error: "Invalid court type" },
         { status: 400 },
@@ -62,7 +71,7 @@ export async function POST(req: NextRequest) {
     const newCase = await createCaseWithClaims({
       organizationId: session.orgId,
       title,
-      courtType,
+      courtType: courtType as CaseCourtType | undefined,
       jurisdiction,
       courtName,
       caseNumber,
@@ -82,9 +91,9 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSessionFromRequest(req);
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
