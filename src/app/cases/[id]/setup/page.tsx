@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, FileText, Gavel } from "lucide-react";
+import { getCourtTypeLabel, type CaseCourtType } from "@/lib/legal/claim-templates";
 
 export default async function CaseSetupPage({
   params,
@@ -37,7 +38,7 @@ export default async function CaseSetupPage({
             <DetailRow label="Title" value={caseData.title} />
             <DetailRow
               label="Court Type"
-              value={caseData.courtType === "FEDERAL" ? "Federal" : "State"}
+              value={getCourtTypeLabel(caseData.courtType as CaseCourtType)}
             />
             <DetailRow label="Jurisdiction" value={caseData.jurisdiction} />
             <DetailRow label="Court Name" value={caseData.courtName ?? "—"} />

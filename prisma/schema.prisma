@@ -90,6 +90,7 @@ model Case {
 enum CourtType {
   STATE
   FEDERAL
+  SMALL_CLAIMS
 }
 
 enum CaseStatus {
