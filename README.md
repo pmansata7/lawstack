@@ -61,6 +61,14 @@ For Supabase **Transaction pooler** (port **6543**), `DATABASE_URL` **must** inc
 npx prisma db push
 ```
 
+If you use **Small Claims Court** and case creation fails with `invalid input value for enum "CourtType": "SMALL_CLAIMS"`, the Postgres enum was created before that value existed. Either run `npx prisma db push` again against your database, or in the Supabase SQL editor:
+
+```sql
+ALTER TYPE "CourtType" ADD VALUE IF NOT EXISTS 'SMALL_CLAIMS';
+```
+
+(Also available as `npm run db:small-claims-enum` when `DATABASE_URL` is set.)
+
 ### 4. Run the development server
 
 ```bash

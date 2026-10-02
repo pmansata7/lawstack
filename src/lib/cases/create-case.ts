@@ -73,7 +73,27 @@ export async function createCaseWithClaims(
   });
 }
 
+function errorText(error: unknown): string {
+  if (error instanceof Error) {
+    const parts = [error.message];
+    if (error.cause instanceof Error) parts.push(error.cause.message);
+    return parts.join(" ");
+  }
+  return String(error);
+}
+
 export function getCreateCaseErrorMessage(error: unknown): string {
+  const message = errorText(error);
+
+  if (
+    message.includes('enum "CourtType"') &&
+    message.includes("SMALL_CLAIMS")
+  ) {
+    return (
+      'Small claims court is not enabled in the database yet. Run `npm run db:push` or execute supabase/migrations/20251002000000_add_small_claims_court_type.sql in the Supabase SQL editor (adds SMALL_CLAIMS to the CourtType enum).'
+    );
+  }
+
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     switch (error.code) {
       case "P2003":
