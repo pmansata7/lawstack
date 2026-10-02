@@ -13,12 +13,22 @@ export async function POST(
   const { id } = await params;
   const formData = await req.formData();
   const file = formData.get("file") as File;
-  const title = formData.get("title") as string;
+  const titleRaw = formData.get("title");
   const type = formData.get("type") as string;
+  const relativePathRaw = formData.get("relativePath");
 
-  if (!file || !title) {
-    return NextResponse.json({ error: "File and title are required" }, { status: 400 });
+  if (!file || typeof file === "string") {
+    return NextResponse.json({ error: "A valid file is required" }, { status: 400 });
   }
+
+  const title =
+    typeof titleRaw === "string" && titleRaw.trim().length > 0
+      ? titleRaw.trim()
+      : file.name;
+  const relativePath =
+    typeof relativePathRaw === "string" && relativePathRaw.trim().length > 0
+      ? relativePathRaw.trim()
+      : null;
 
   const caseData = await prisma.case.findFirst({
     where: { id, organizationId: session.orgId },
@@ -51,9 +61,10 @@ export async function POST(
       type: (type ?? "DOCUMENT") as "DOCUMENT" | "TIMELINE" | "WITNESS" | "DAMAGES" | "PHOTO" | "VIDEO" | "AUDIO" | "OTHER",
       title,
       fileUrl: uploadData?.path ?? urlData?.publicUrl ?? null,
-      fileName: file.name,
+      fileName: relativePath ?? file.name,
       fileSize: file.size,
       mimeType: file.type,
+      metadata: relativePath ? { relativePath } : undefined,
     },
   });
 
