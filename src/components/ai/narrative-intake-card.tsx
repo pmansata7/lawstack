@@ -13,6 +13,8 @@ type NarrativeIntakeCardProps = {
   description: string;
   placeholder: string;
   minLength?: number;
+  /** When true, submit is allowed even if narrative is shorter than minLength. */
+  allowSubmitWithoutMinNarrative?: boolean;
   submitLabel?: string;
   onGenerate: (narrative: string) => Promise<void>;
 };
@@ -22,14 +24,18 @@ export function NarrativeIntakeCard({
   description,
   placeholder,
   minLength = 20,
+  allowSubmitWithoutMinNarrative = false,
   submitLabel = "Fill with AI",
   onGenerate,
 }: NarrativeIntakeCardProps) {
   const [narrative, setNarrative] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const narrativeOk =
+    narrative.trim().length >= minLength || allowSubmitWithoutMinNarrative;
+
   const handleSubmit = async () => {
-    if (narrative.trim().length < minLength) return;
+    if (!narrativeOk) return;
     setLoading(true);
     try {
       await onGenerate(narrative.trim());
@@ -69,7 +75,7 @@ export function NarrativeIntakeCard({
         <Button
           type="button"
           onClick={handleSubmit}
-          disabled={loading || narrative.trim().length < minLength}
+          disabled={loading || !narrativeOk}
         >
           {loading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -80,7 +80,11 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
       method: "POST",
       credentials: "same-origin",
       headers,
-      body: JSON.stringify({ narrative, apply: true }),
+      body: JSON.stringify({
+        narrative,
+        apply: true,
+        includeDocuments: true,
+      }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -93,8 +97,15 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
       witnesses: number;
       damages: number;
     };
+    const docs = data.documents as
+      | { total: number; withExtractedText: number }
+      | undefined;
+    const docNote =
+      docs && docs.total > 0
+        ? ` Analyzed ${docs.total} uploaded document${docs.total === 1 ? "" : "s"}${docs.withExtractedText < docs.total ? ` (${docs.withExtractedText} with extracted text)` : ""}.`
+        : "";
     toast.success("AI added case details", {
-      description: `${applied.facts} facts, ${applied.timeline} timeline entries, ${applied.witnesses} witnesses, ${applied.damages} damage items.`,
+      description: `${applied.facts} facts, ${applied.timeline} timeline entries, ${applied.witnesses} witnesses, ${applied.damages} damage items.${docNote}`,
     });
     router.refresh();
   };
@@ -103,8 +114,10 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
     <div className="space-y-6">
       <NarrativeIntakeCard
         title="AI fill facts & evidence"
-        description="Describe what happened in plain language. AI will add facts, timeline events, witnesses, and damages to this case (you can edit or delete anything afterward). Upload documents or folders below to attach files to the case."
-        placeholder="Include dates, who did what, money amounts, witnesses, and documents if you know them."
+        description="Upload documents below, then generate. AI reads all uploaded files (PDFs, text, etc.) plus any notes you add here, and creates facts, timeline events, witnesses, and damages you can edit afterward."
+        placeholder="Optional: add context or instructions (e.g. focus on repair timeline). Uploaded documents are analyzed automatically."
+        allowSubmitWithoutMinNarrative={docCount > 0}
+        minLength={docCount > 0 ? 0 : 20}
         submitLabel="Generate & add to case"
         onGenerate={async (narrative) => {
           try {

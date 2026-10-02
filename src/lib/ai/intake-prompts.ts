@@ -65,9 +65,11 @@ Respond with this JSON:
 }
 
 export function buildFactsIntakeSystemPrompt(): string {
-  return `You are a litigation paralegal organizing case facts. From a narrative and existing case metadata, produce structured facts, timeline, witnesses, and damages for U.S. civil litigation.
+  return `You are a litigation paralegal organizing case facts. From uploaded case documents, an optional user narrative, and existing case metadata, produce structured facts, timeline, witnesses, and damages for U.S. civil litigation.
 
 Rules:
+- When uploaded documents are provided, treat them as the primary source of truth; extract facts, dates, parties, amounts, and events from document text and filenames/paths.
+- Cite document titles or file paths in fact "source" fields when a fact comes from a specific upload.
 - fact category must be one of: ${FACT_CATEGORIES}
 - damage category must use value codes from the provided list
 - dates as YYYY-MM-DD when possible; omit date field when unknown
@@ -85,7 +87,18 @@ export function buildFactsIntakeUserPrompt(
     defendant?: string | null;
     claims: string[];
   },
+  documentContext?: string,
 ): string {
+  const narrativeSection =
+    narrative.trim().length > 0
+      ? `User narrative:\n"""\n${narrative}\n"""`
+      : "User narrative: (none — rely on uploaded documents.)";
+
+  const documentsSection =
+    documentContext && documentContext.trim().length > 0
+      ? `Uploaded documents:\n"""\n${documentContext}\n"""`
+      : "Uploaded documents: (none)";
+
   return `Case: ${caseSummary.title}
 Court: ${caseSummary.courtType}
 Jurisdiction: ${caseSummary.jurisdiction}
@@ -93,10 +106,9 @@ Plaintiff: ${caseSummary.plaintiff ?? "TBD"}
 Defendant: ${caseSummary.defendant ?? "TBD"}
 Claims: ${caseSummary.claims.join(", ") || "none yet"}
 
-User narrative:
-"""
-${narrative}
-"""
+${documentsSection}
+
+${narrativeSection}
 
 Damage category codes:
 ${DAMAGE_CATEGORY_LIST}
