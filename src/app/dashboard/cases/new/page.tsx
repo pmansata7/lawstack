@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -25,7 +27,10 @@ import { Loader2, ArrowRight, ArrowLeft, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   getClaimTemplatesForCourtType,
-  getJurisdictionsForCourtType,
+  getCourtTypeLabel,
+  getJurisdictionGroups,
+  isSmallClaimsJurisdiction,
+  resolveCourtType,
   type CaseCourtType,
   type ClaimTemplate,
 } from "@/lib/legal/claim-templates";
@@ -50,9 +55,52 @@ export default function NewCasePage() {
   });
 
   const [selectedClaims, setSelectedClaims] = useState<ClaimTemplate[]>([]);
+  const [claimSearch, setClaimSearch] = useState("");
 
-  const jurisdictions = getJurisdictionsForCourtType(caseData.courtType);
-  const availableClaims = getClaimTemplatesForCourtType(caseData.courtType);
+  const effectiveCourtType = resolveCourtType(
+    caseData.courtType,
+    caseData.jurisdiction,
+  );
+  const jurisdictionGroups = getJurisdictionGroups(caseData.courtType);
+  const availableClaims = getClaimTemplatesForCourtType(effectiveCourtType);
+  const filteredClaims = useMemo(() => {
+    const q = claimSearch.trim().toLowerCase();
+    if (!q) return availableClaims;
+    return availableClaims.filter(
+      (c) =>
+        c.label.toLowerCase().includes(q) ||
+        c.category.toLowerCase().includes(q) ||
+        c.description.toLowerCase().includes(q) ||
+        c.elements.some((e) => e.element.toLowerCase().includes(q)),
+    );
+  }, [availableClaims, claimSearch]);
+
+  const enableSmallClaims = () => {
+    setCaseData({
+      ...caseData,
+      courtType: "SMALL_CLAIMS",
+      jurisdiction: caseData.jurisdiction || "ca-small-claims",
+    });
+    setSelectedClaims([]);
+    setClaimSearch("");
+    setStep("case");
+    toast.message("Small claims enabled", {
+      description:
+        "Court type is set to Small Claims Court. Confirm your jurisdiction, then continue to Define Claims.",
+    });
+  };
+
+  const handleJurisdictionChange = (value: string | null) => {
+    const jurisdiction = value ?? "";
+    let courtType = caseData.courtType;
+    if (isSmallClaimsJurisdiction(jurisdiction)) {
+      courtType = "SMALL_CLAIMS";
+    } else if (courtType === "SMALL_CLAIMS") {
+      courtType = "STATE";
+    }
+    setCaseData({ ...caseData, jurisdiction, courtType });
+    setSelectedClaims([]);
+  };
 
   const handleCreate = async () => {
     setLoading(true);
@@ -64,6 +112,7 @@ export default function NewCasePage() {
         headers,
         body: JSON.stringify({
           ...caseData,
+          courtType: effectiveCourtType,
           claims: selectedClaims.map((c) => ({
             claimType: c.type,
             jurisdiction: caseData.jurisdiction,
@@ -143,6 +192,10 @@ export default function NewCasePage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="courtType">Court Type</Label>
+                <p className="text-xs text-muted-foreground">
+                  Choose <span className="font-medium">Small Claims Court</span>{" "}
+                  or pick a small claims jurisdiction under State Court.
+                </p>
                 <Select
                   value={caseData.courtType}
                   onValueChange={(v: string | null) => {
@@ -154,13 +207,13 @@ export default function NewCasePage() {
                     setSelectedClaims([]);
                   }}
                 >
-                  <SelectTrigger id="courtType">
+                  <SelectTrigger id="courtType" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="FEDERAL">Federal Court</SelectItem>
-                    <SelectItem value="STATE">State Court</SelectItem>
                     <SelectItem value="SMALL_CLAIMS">Small Claims Court</SelectItem>
+                    <SelectItem value="STATE">State Court</SelectItem>
+                    <SelectItem value="FEDERAL">Federal Court</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -168,18 +221,21 @@ export default function NewCasePage() {
                 <Label htmlFor="jurisdiction">Jurisdiction</Label>
                 <Select
                   value={caseData.jurisdiction}
-                  onValueChange={(v: string | null) =>
-                    setCaseData({ ...caseData, jurisdiction: v ?? "" })
-                  }
+                  onValueChange={handleJurisdictionChange}
                 >
-                  <SelectTrigger id="jurisdiction">
+                  <SelectTrigger id="jurisdiction" className="w-full">
                     <SelectValue placeholder="Select jurisdiction" />
                   </SelectTrigger>
                   <SelectContent>
-                    {jurisdictions.map((j) => (
-                      <SelectItem key={j.value} value={j.value}>
-                        {j.label}
-                      </SelectItem>
+                    {jurisdictionGroups.map((group) => (
+                      <SelectGroup key={group.label}>
+                        <SelectLabel>{group.label}</SelectLabel>
+                        {group.options.map((j) => (
+                          <SelectItem key={j.value} value={j.value}>
+                            {j.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     ))}
                   </SelectContent>
                 </Select>
@@ -256,11 +312,53 @@ export default function NewCasePage() {
             <CardDescription>
               Select the causes of action for this case. Each claim has
               pre-built legal elements that will guide your fact organization.
-              {caseData.courtType === "SMALL_CLAIMS" &&
-                " Small claims templates are tailored to common limited-jurisdiction disputes."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">
+                Court: {getCourtTypeLabel(effectiveCourtType)}
+              </Badge>
+              {caseData.jurisdiction && (
+                <Badge variant="secondary" className="max-w-full truncate">
+                  {jurisdictionGroups
+                    .flatMap((g) => g.options)
+                    .find((j) => j.value === caseData.jurisdiction)?.label ??
+                    caseData.jurisdiction}
+                </Badge>
+              )}
+            </div>
+
+            {effectiveCourtType !== "SMALL_CLAIMS" && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+                <p className="font-medium">Small claims not showing?</p>
+                <p className="mt-1 text-pretty">
+                  Standard civil claims (like Nuisance and Trespass) appear for
+                  federal and general state courts. For small claims templates
+                  (Money Owed, Security Deposit, etc.), enable small claims
+                  below or go back and choose{" "}
+                  <span className="font-medium">Small Claims Court</span>.
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="mt-3"
+                  variant="secondary"
+                  onClick={enableSmallClaims}
+                >
+                  Use small claims court
+                </Button>
+              </div>
+            )}
+
+            {effectiveCourtType === "SMALL_CLAIMS" && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+                Small claims templates are shown first (category{" "}
+                <span className="font-medium">Small Claims</span>). Search below
+                if you do not see the one you need.
+              </div>
+            )}
+
             {/* Selected claims */}
             {selectedClaims.length > 0 && (
               <div className="space-y-2">
@@ -291,9 +389,22 @@ export default function NewCasePage() {
 
             {/* Available claims */}
             <div className="space-y-2">
-              <Label>Available Claim Types</Label>
+              <Label htmlFor="claimSearch">Available Claim Types</Label>
+              <Input
+                id="claimSearch"
+                placeholder="Search claims (e.g. small claims, deposit, money owed)"
+                value={claimSearch}
+                onChange={(e) => setClaimSearch(e.target.value)}
+              />
               <div className="max-h-96 space-y-2 overflow-y-auto">
-                {availableClaims.map((c) => {
+                {filteredClaims.length === 0 && (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    No claims match your search.
+                    {effectiveCourtType !== "SMALL_CLAIMS" &&
+                      ' Try "Use small claims court" above for small claims templates.'}
+                  </p>
+                )}
+                {filteredClaims.map((c) => {
                   const isSelected = selectedClaims.some(
                     (s) => s.type === c.type,
                   );
