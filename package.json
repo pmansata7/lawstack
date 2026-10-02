@@ -10,6 +10,7 @@
     "lint": "eslint",
     "seed": "npx tsx prisma/seed.ts",
     "db:push": "npx prisma db push",
+    "db:small-claims-enum": "psql \"$DATABASE_URL\" -f supabase/migrations/20251002000000_add_small_claims_court_type.sql",
     "db:rls": "psql $DATABASE_URL -f supabase/rls-policies.sql"
   },
   "dependencies": {
