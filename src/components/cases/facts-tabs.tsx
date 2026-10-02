@@ -11,6 +11,10 @@ import { LegalElementsTab } from "@/components/cases/legal-elements-tab";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { NarrativeIntakeCard } from "@/components/ai/narrative-intake-card";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { getAuthFetchHeaders } from "@/lib/auth/auth-fetch-headers";
 
 interface FactsTabsProps {
   caseId: string;
@@ -58,6 +62,7 @@ interface FactsTabsProps {
 }
 
 export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("facts");
 
   const factCount = initialData.facts.length;
@@ -68,8 +73,47 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
     0,
   );
 
+  const handleAiFactsIntake = async (narrative: string) => {
+    const headers = await getAuthFetchHeaders();
+    const res = await fetch(`/api/cases/${caseId}/ai-intake`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers,
+      body: JSON.stringify({ narrative, apply: true }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error ?? "AI intake failed");
+    }
+
+    const applied = data.applied as {
+      facts: number;
+      timeline: number;
+      witnesses: number;
+      damages: number;
+    };
+    toast.success("AI added case details", {
+      description: `${applied.facts} facts, ${applied.timeline} timeline entries, ${applied.witnesses} witnesses, ${applied.damages} damage items.`,
+    });
+    router.refresh();
+  };
+
   return (
     <div className="space-y-6">
+      <NarrativeIntakeCard
+        title="AI fill facts & evidence"
+        description="Describe what happened in plain language. AI will add facts, timeline events, witnesses, and damages to this case (you can edit or delete anything afterward)."
+        placeholder="Include dates, who did what, money amounts, witnesses, and documents if you know them."
+        submitLabel="Generate & add to case"
+        onGenerate={async (narrative) => {
+          try {
+            await handleAiFactsIntake(narrative);
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "AI intake failed");
+          }
+        }}
+      />
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full justify-start">
           <TabsTrigger value="facts">

@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowRight, ArrowLeft, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import {
+  CLAIM_TEMPLATES,
   getClaimTemplatesForCourtType,
   getCourtTypeLabel,
   getJurisdictionGroups,
@@ -35,6 +36,7 @@ import {
   type ClaimTemplate,
 } from "@/lib/legal/claim-templates";
 import { getAuthFetchHeaders } from "@/lib/auth/auth-fetch-headers";
+import { NarrativeIntakeCard } from "@/components/ai/narrative-intake-card";
 
 type Step = "case" | "claims";
 
@@ -88,6 +90,67 @@ export default function NewCasePage() {
       description:
         "Court type is set to Small Claims Court. Confirm your jurisdiction, then continue to Define Claims.",
     });
+  };
+
+  const handleAiCaseIntake = async (narrative: string) => {
+    const headers = await getAuthFetchHeaders();
+    const res = await fetch("/api/ai/case-intake", {
+      method: "POST",
+      credentials: "same-origin",
+      headers,
+      body: JSON.stringify({ narrative }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error ?? "AI intake failed");
+    }
+
+    const s = data.suggestion as {
+      title: string;
+      courtType: CaseCourtType;
+      jurisdiction: string;
+      courtName: string;
+      caseNumber: string;
+      plaintiff: string;
+      defendant: string;
+      opposingParty: string;
+      claimTypes: string[];
+      notes: string;
+    };
+
+    setCaseData((prev) => ({
+      ...prev,
+      title: s.title || prev.title,
+      courtType: s.courtType || prev.courtType,
+      jurisdiction: s.jurisdiction || prev.jurisdiction,
+      courtName: s.courtName || prev.courtName,
+      caseNumber: s.caseNumber || prev.caseNumber,
+      plaintiff: s.plaintiff || prev.plaintiff,
+      defendant: s.defendant || prev.defendant,
+      opposingParty: s.opposingParty || prev.opposingParty,
+    }));
+
+    const courtForClaims = resolveCourtType(
+      s.courtType || caseData.courtType,
+      s.jurisdiction || caseData.jurisdiction,
+    );
+    const allowed = new Set(
+      getClaimTemplatesForCourtType(courtForClaims).map((c) => c.type),
+    );
+    const claims = s.claimTypes
+      .map((type) => CLAIM_TEMPLATES.find((c) => c.type === type))
+      .filter((c): c is ClaimTemplate => Boolean(c && allowed.has(c.type)));
+
+    if (claims.length > 0) {
+      setSelectedClaims(claims);
+    }
+
+    toast.success("AI filled case details", {
+      description: s.notes || "Review fields and claims before creating the case.",
+    });
+    if (claims.length > 0) {
+      setStep("claims");
+    }
   };
 
   const handleJurisdictionChange = (value: string | null) => {
@@ -177,6 +240,21 @@ export default function NewCasePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <NarrativeIntakeCard
+              title="AI case intake"
+              description="Paste a short summary of the dispute. AI will suggest the caption, court, jurisdiction, parties, and claims."
+              placeholder="Example: My landlord kept my $2,000 security deposit after I moved out of my Oakland apartment. I left the unit clean on March 1, 2025, but they never returned the deposit or sent an itemized statement."
+              onGenerate={async (narrative) => {
+                try {
+                  await handleAiCaseIntake(narrative);
+                } catch (e) {
+                  toast.error(
+                    e instanceof Error ? e.message : "AI intake failed",
+                  );
+                }
+              }}
+            />
+
             <div className="space-y-2">
               <Label htmlFor="title">Case Title *</Label>
               <Input

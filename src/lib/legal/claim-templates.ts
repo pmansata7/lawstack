@@ -51,6 +51,18 @@ export function getJurisdictionsForCourtType(
   return getJurisdictionGroups(courtType).flatMap((group) => group.options);
 }
 
+export function getAllJurisdictionOptions(): JurisdictionOption[] {
+  return [
+    ...JURISDICTIONS.federal,
+    ...JURISDICTIONS.state,
+    ...JURISDICTIONS.smallClaims,
+  ];
+}
+
+export function isValidJurisdictionValue(value: string): boolean {
+  return getAllJurisdictionOptions().some((j) => j.value === value);
+}
+
 export function getJurisdictionGroups(
   courtType: CaseCourtType,
 ): { label: string; options: JurisdictionOption[] }[] {
