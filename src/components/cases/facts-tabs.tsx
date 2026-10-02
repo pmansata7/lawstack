@@ -12,6 +12,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { NarrativeIntakeCard } from "@/components/ai/narrative-intake-card";
+import { EvidenceUploadZone } from "@/components/cases/evidence-upload-zone";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getAuthFetchHeaders } from "@/lib/auth/auth-fetch-headers";
@@ -102,7 +103,7 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
     <div className="space-y-6">
       <NarrativeIntakeCard
         title="AI fill facts & evidence"
-        description="Describe what happened in plain language. AI will add facts, timeline events, witnesses, and damages to this case (you can edit or delete anything afterward)."
+        description="Describe what happened in plain language. AI will add facts, timeline events, witnesses, and damages to this case (you can edit or delete anything afterward). Upload documents or folders below to attach files to the case."
         placeholder="Include dates, who did what, money amounts, witnesses, and documents if you know them."
         submitLabel="Generate & add to case"
         onGenerate={async (narrative) => {
@@ -112,6 +113,11 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
             toast.error(e instanceof Error ? e.message : "AI intake failed");
           }
         }}
+      />
+
+      <EvidenceUploadZone
+        caseId={caseId}
+        onUploaded={() => router.refresh()}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
