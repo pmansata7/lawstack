@@ -12,6 +12,7 @@ import {
 } from "@/lib/ai/org-provider";
 import { prisma } from "@/lib/prisma";
 import { getCaseForOrganization } from "@/lib/cases/get-case-for-org";
+import { buildEvidenceContextForFactsIntake } from "@/lib/evidence/gather-evidence-for-intake";
 
 export async function POST(
   req: NextRequest,
@@ -34,22 +35,35 @@ export async function POST(
     const body = await req.json();
     const narrative =
       typeof body.narrative === "string" ? body.narrative.trim() : "";
-    if (narrative.length < 20) {
+    const includeDocuments = body.includeDocuments !== false;
+    const apply = Boolean(body.apply);
+
+    const evidenceList = includeDocuments
+      ? await prisma.evidence.findMany({
+          where: { caseId: id },
+          orderBy: { createdAt: "asc" },
+        })
+      : [];
+
+    const hasDocuments = evidenceList.length > 0;
+    if (narrative.length < 20 && !hasDocuments) {
       return NextResponse.json(
         {
           error:
-            "Please describe what happened in at least a few sentences (20+ characters).",
+            "Add a short description (20+ characters) or upload at least one document for AI to analyze.",
         },
         { status: 400 },
       );
     }
 
-    const apply = Boolean(body.apply);
-
     const provider = await getAiProviderForOrganization(
       session.orgId,
       null,
     );
+
+    const { context: documentContext, documentCount, withTextCount } =
+      await buildEvidenceContextForFactsIntake(evidenceList, provider);
+
     const result = await provider.generateCompletion(
       [
         { role: "system", content: buildFactsIntakeSystemPrompt() },
@@ -62,10 +76,10 @@ export async function POST(
             plaintiff: caseData.plaintiff,
             defendant: caseData.defendant,
             claims: caseData.claims.map((c) => c.claimType),
-          }),
+          }, documentContext),
         },
       ],
-      { temperature: 0.25, maxTokens: 4096 },
+      { temperature: 0.25, maxTokens: 8192 },
     );
 
     const suggestion = normalizeFactsIntake(
@@ -73,7 +87,10 @@ export async function POST(
     );
 
     if (!apply) {
-      return NextResponse.json({ suggestion });
+      return NextResponse.json({
+        suggestion,
+        documents: { total: documentCount, withExtractedText: withTextCount },
+      });
     }
 
     const created = await prisma.$transaction(async (tx) => {
@@ -150,7 +167,11 @@ export async function POST(
       };
     });
 
-    return NextResponse.json({ suggestion, applied: created });
+    return NextResponse.json({
+      suggestion,
+      applied: created,
+      documents: { total: documentCount, withExtractedText: withTextCount },
+    });
   } catch (error) {
     if (error instanceof AiNotConfiguredError) {
       return NextResponse.json({ error: error.message }, { status: 503 });
