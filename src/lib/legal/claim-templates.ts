@@ -30,10 +30,54 @@ export function getCourtTypeLabel(courtType: CaseCourtType): string {
   }
 }
 
-export function getJurisdictionsForCourtType(courtType: CaseCourtType) {
-  if (courtType === "FEDERAL") return JURISDICTIONS.federal;
-  if (courtType === "SMALL_CLAIMS") return JURISDICTIONS.smallClaims;
-  return JURISDICTIONS.state;
+export type JurisdictionOption = { value: string; label: string };
+
+export function isSmallClaimsJurisdiction(jurisdiction: string): boolean {
+  return JURISDICTIONS.smallClaims.some((j) => j.value === jurisdiction);
+}
+
+/** Court type used for claim templates and case creation (jurisdiction can imply small claims). */
+export function resolveCourtType(
+  courtType: CaseCourtType,
+  jurisdiction: string,
+): CaseCourtType {
+  if (isSmallClaimsJurisdiction(jurisdiction)) return "SMALL_CLAIMS";
+  return courtType;
+}
+
+export function getJurisdictionsForCourtType(
+  courtType: CaseCourtType,
+): JurisdictionOption[] {
+  return getJurisdictionGroups(courtType).flatMap((group) => group.options);
+}
+
+export function getAllJurisdictionOptions(): JurisdictionOption[] {
+  return [
+    ...JURISDICTIONS.federal,
+    ...JURISDICTIONS.state,
+    ...JURISDICTIONS.smallClaims,
+  ];
+}
+
+export function isValidJurisdictionValue(value: string): boolean {
+  return getAllJurisdictionOptions().some((j) => j.value === value);
+}
+
+export function getJurisdictionGroups(
+  courtType: CaseCourtType,
+): { label: string; options: JurisdictionOption[] }[] {
+  if (courtType === "FEDERAL") {
+    return [{ label: "Federal districts", options: JURISDICTIONS.federal }];
+  }
+  if (courtType === "SMALL_CLAIMS") {
+    return [
+      { label: "Small claims courts", options: JURISDICTIONS.smallClaims },
+    ];
+  }
+  return [
+    { label: "Small claims courts", options: JURISDICTIONS.smallClaims },
+    { label: "State courts", options: JURISDICTIONS.state },
+  ];
 }
 
 const SMALL_CLAIMS_COMMON_TYPES = new Set([
@@ -45,17 +89,34 @@ const SMALL_CLAIMS_COMMON_TYPES = new Set([
   "nuisance",
 ]);
 
+function sortClaimTemplatesForDisplay(
+  templates: ClaimTemplate[],
+  courtType: CaseCourtType,
+): ClaimTemplate[] {
+  return [...templates].sort((a, b) => {
+    if (courtType === "SMALL_CLAIMS") {
+      const rank = (t: ClaimTemplate) => (t.category === "Small Claims" ? 0 : 1);
+      const byCategory = rank(a) - rank(b);
+      if (byCategory !== 0) return byCategory;
+    }
+    return a.label.localeCompare(b.label);
+  });
+}
+
 export function getClaimTemplatesForCourtType(
   courtType: CaseCourtType,
 ): ClaimTemplate[] {
+  let templates: ClaimTemplate[];
   if (courtType === "SMALL_CLAIMS") {
-    return CLAIM_TEMPLATES.filter(
+    templates = CLAIM_TEMPLATES.filter(
       (template) =>
         template.courtTypes?.includes("SMALL_CLAIMS") ||
         SMALL_CLAIMS_COMMON_TYPES.has(template.type),
     );
+  } else {
+    templates = CLAIM_TEMPLATES.filter((template) => !template.courtTypes);
   }
-  return CLAIM_TEMPLATES.filter((template) => !template.courtTypes);
+  return sortClaimTemplatesForDisplay(templates, courtType);
 }
 
 export const CLAIM_TEMPLATES: ClaimTemplate[] = [

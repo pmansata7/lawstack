@@ -15,7 +15,8 @@ export default async function AiSettingsPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold">AI Provider Settings</h1>
         <p className="text-muted-foreground">
-          Configure your AI provider for legal analysis and complaint drafting.
+          Configure your AI provider for case intake, facts organization, legal
+          analysis, and complaint drafting.
         </p>
       </div>
 
