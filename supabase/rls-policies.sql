@@ -17,6 +17,7 @@ ALTER TABLE drafts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE collaborations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE case_transcripts ENABLE ROW LEVEL SECURITY;
 
 -- ─── Organizations ─────────────────────────────────────────────────
 -- Users can see orgs they are members of
@@ -276,6 +277,43 @@ CREATE POLICY "members_can_read_ai_settings" ON ai_settings
 CREATE POLICY "members_can_modify_ai_settings" ON ai_settings
   FOR ALL USING (
     EXISTS (SELECT 1 FROM org_members WHERE org_members.organization_id = ai_settings.organization_id AND org_members.user_id = auth.uid())
+  );
+
+-- ─── Case Transcripts ───────────────────────────────────────────────
+CREATE POLICY "members_can_read_case_transcripts" ON case_transcripts
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM cases c
+      JOIN org_members m ON m.organization_id = c.organization_id
+      WHERE c.id = case_transcripts.case_id AND m.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "members_can_insert_case_transcripts" ON case_transcripts
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM cases c
+      JOIN org_members m ON m.organization_id = c.organization_id
+      WHERE c.id = case_transcripts.case_id AND m.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "members_can_update_case_transcripts" ON case_transcripts
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM cases c
+      JOIN org_members m ON m.organization_id = c.organization_id
+      WHERE c.id = case_transcripts.case_id AND m.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "members_can_delete_case_transcripts" ON case_transcripts
+  FOR DELETE USING (
+    EXISTS (
+      SELECT 1 FROM cases c
+      JOIN org_members m ON m.organization_id = c.organization_id
+      WHERE c.id = case_transcripts.case_id AND m.user_id = auth.uid()
+    )
   );
 
 -- ─── Storage: evidence bucket ───────────────────────────────────────

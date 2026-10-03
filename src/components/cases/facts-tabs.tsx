@@ -12,6 +12,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { NarrativeIntakeCard } from "@/components/ai/narrative-intake-card";
+import { TranscriptsPanel } from "@/components/cases/transcripts-panel";
 import { EvidenceUploadZone } from "@/components/cases/evidence-upload-zone";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -39,6 +40,17 @@ interface FactsTabsProps {
       type: string;
       fileName: string | null;
       fileUrl: string | null;
+    }>;
+    transcripts: Array<{
+      id: string;
+      title: string;
+      source: string;
+      status: string;
+      summary: string | null;
+      recordedAt: Date | null;
+      externalId: string | null;
+      createdAt: Date;
+      content: string;
     }>;
     timeline: Array<{
       id: string;
@@ -68,6 +80,7 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
 
   const factCount = initialData.facts.length;
   const docCount = initialData.evidence.length;
+  const transcriptCount = initialData.transcripts.length;
   const witnessCount = initialData.witnesses.length;
   const damageTotal = initialData.damages.reduce(
     (sum, d) => sum + d.amount,
@@ -116,8 +129,8 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
         title="AI fill facts & evidence"
         description="Upload documents below, then generate. AI reads all uploaded files (PDFs, text, etc.) plus any notes you add here, and creates facts, timeline events, witnesses, and damages you can edit afterward."
         placeholder="Optional: add context or instructions (e.g. focus on repair timeline). Uploaded documents are analyzed automatically."
-        allowSubmitWithoutMinNarrative={docCount > 0}
-        minLength={docCount > 0 ? 0 : 20}
+        allowSubmitWithoutMinNarrative={docCount > 0 || transcriptCount > 0}
+        minLength={docCount > 0 || transcriptCount > 0 ? 0 : 20}
         submitLabel="Generate & add to case"
         onGenerate={async (narrative) => {
           try {
@@ -141,6 +154,9 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
           <TabsTrigger value="timeline">
             Timeline ({initialData.timeline.length})
           </TabsTrigger>
+          <TabsTrigger value="transcripts">
+            Transcripts ({transcriptCount})
+          </TabsTrigger>
           <TabsTrigger value="documents">
             Documents ({docCount})
           </TabsTrigger>
@@ -160,6 +176,22 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
         </TabsContent>
         <TabsContent value="timeline">
           <TimelineTab caseId={caseId} initialTimeline={initialData.timeline} />
+        </TabsContent>
+        <TabsContent value="transcripts">
+          <TranscriptsPanel
+            caseId={caseId}
+            initialTranscripts={initialData.transcripts.map((t) => ({
+              id: t.id,
+              title: t.title,
+              source: t.source,
+              status: t.status,
+              summary: t.summary,
+              recordedAt: t.recordedAt?.toISOString() ?? null,
+              externalId: t.externalId,
+              createdAt: t.createdAt.toISOString(),
+              preview: t.content.slice(0, 280),
+            }))}
+          />
         </TabsContent>
         <TabsContent value="documents">
           <DocumentsTab caseId={caseId} initialEvidence={initialData.evidence} />

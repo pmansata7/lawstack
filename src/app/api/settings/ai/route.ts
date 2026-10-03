@@ -14,6 +14,7 @@ export async function PATCH(req: NextRequest) {
       organizationId: session.orgId,
       provider: body.provider ?? "openai",
       apiKey: body.apiKey,
+      granolaApiKey: body.granolaApiKey,
       model: body.model ?? "gpt-4o",
       analysisModel: body.analysisModel || null,
       draftingModel: body.draftingModel || null,
@@ -22,6 +23,7 @@ export async function PATCH(req: NextRequest) {
     update: {
       provider: body.provider,
       apiKey: body.apiKey || undefined,
+      granolaApiKey: body.granolaApiKey || undefined,
       model: body.model,
       analysisModel: body.analysisModel || null,
       draftingModel: body.draftingModel || null,
@@ -49,6 +51,7 @@ export async function GET() {
           draftingModel: settings.draftingModel,
           temperature: settings.temperature,
           hasApiKey: !!settings.apiKey,
+          hasGranolaApiKey: !!settings.granolaApiKey,
         }
       : null,
   });

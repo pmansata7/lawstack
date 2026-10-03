@@ -18,6 +18,7 @@ export default async function FactsPage({
       claims: true,
       facts: { orderBy: { createdAt: "desc" } },
       evidence: { orderBy: { createdAt: "desc" } },
+      transcripts: { orderBy: [{ recordedAt: "desc" }, { createdAt: "desc" }] },
       timeline: { orderBy: { date: "asc" } },
       witnesses: { orderBy: { createdAt: "desc" } },
       damages: { orderBy: { createdAt: "desc" } },

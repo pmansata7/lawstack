@@ -16,7 +16,8 @@ export default async function AiSettingsPage() {
         <h1 className="text-2xl font-bold">AI Provider Settings</h1>
         <p className="text-muted-foreground">
           Configure your AI provider for case intake, facts organization, legal
-          analysis, and complaint drafting.
+          analysis, complaint drafting, audio transcription (Whisper), and
+          Granola transcript import.
         </p>
       </div>
 
@@ -28,6 +29,7 @@ export default async function AiSettingsPage() {
           draftingModel: settings?.draftingModel ?? "",
           temperature: settings?.temperature ?? 0.7,
           hasApiKey: !!settings?.apiKey,
+          hasGranolaApiKey: !!settings?.granolaApiKey,
         }}
       />
     </div>

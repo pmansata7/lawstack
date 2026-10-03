@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth/session-from-request";
+import { getCaseForOrganization } from "@/lib/cases/get-case-for-org";
+import { prisma } from "@/lib/prisma";
 import {
   buildFactsIntakeSystemPrompt,
   buildFactsIntakeUserPrompt,
@@ -10,14 +12,12 @@ import {
   AiNotConfiguredError,
   getAiProviderForOrganization,
 } from "@/lib/ai/org-provider";
-import { prisma } from "@/lib/prisma";
-import { getCaseForOrganization } from "@/lib/cases/get-case-for-org";
 import { buildEvidenceContextForFactsIntake } from "@/lib/evidence/gather-evidence-for-intake";
 import { buildTranscriptsContextForIntake } from "@/lib/transcripts/build-transcript-context";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string; transcriptId: string }> },
 ) {
   try {
     const session = await getSessionFromRequest(req);
@@ -25,66 +25,50 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await params;
-    const caseData = await getCaseForOrganization(id, session.orgId, {
+    const { id: caseId, transcriptId } = await params;
+    const caseData = await getCaseForOrganization(caseId, session.orgId, {
       claims: true,
     });
     if (!caseData) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const narrative =
       typeof body.narrative === "string" ? body.narrative.trim() : "";
     const includeDocuments = body.includeDocuments !== false;
-    const apply = Boolean(body.apply);
-    const transcriptIds = Array.isArray(body.transcriptIds)
-      ? body.transcriptIds.filter(
-          (tid: unknown): tid is string => typeof tid === "string",
-        )
-      : [];
+    const apply = body.apply !== false;
 
-    const evidenceList = includeDocuments
-      ? await prisma.evidence.findMany({
-          where: { caseId: id },
-          orderBy: { createdAt: "asc" },
-        })
-      : [];
+    const transcript = await prisma.caseTranscript.findFirst({
+      where: { id: transcriptId, caseId },
+    });
+    if (!transcript) {
+      return NextResponse.json({ error: "Transcript not found" }, { status: 404 });
+    }
 
-    const hasDocuments = evidenceList.length > 0;
-
-    const transcripts =
-      transcriptIds.length > 0
-        ? await prisma.caseTranscript.findMany({
-            where: {
-              caseId: id,
-              id: { in: transcriptIds },
-              status: "READY",
-            },
-          })
-        : [];
-
-    const hasTranscripts = transcripts.some((t) => t.content.trim().length >= 20);
-
-    if (narrative.length < 20 && !hasDocuments && !hasTranscripts) {
+    if (transcript.status !== "READY" || transcript.content.trim().length < 20) {
       return NextResponse.json(
         {
           error:
-            "Add a short description (20+ characters), upload a document, or select a transcript for AI to analyze.",
+            "Transcript needs transcribed text (20+ characters). Run Transcribe first for recordings.",
         },
         { status: 400 },
       );
     }
 
-    const provider = await getAiProviderForOrganization(
-      session.orgId,
-      null,
-    );
+    const evidenceList = includeDocuments
+      ? await prisma.evidence.findMany({
+          where: { caseId },
+          orderBy: { createdAt: "asc" },
+        })
+      : [];
+
+    const provider = await getAiProviderForOrganization(session.orgId, null);
 
     const { context: documentContext, documentCount, withTextCount } =
       await buildEvidenceContextForFactsIntake(evidenceList, provider);
 
-    const transcriptContext = buildTranscriptsContextForIntake(transcripts);
+    const transcriptContext = buildTranscriptsContextForIntake([transcript]);
     const combinedContext = [transcriptContext, documentContext]
       .filter(Boolean)
       .join("\n\n---\n\n");
@@ -94,14 +78,19 @@ export async function POST(
         { role: "system", content: buildFactsIntakeSystemPrompt() },
         {
           role: "user",
-          content: buildFactsIntakeUserPrompt(narrative, {
-            title: caseData.title,
-            courtType: caseData.courtType,
-            jurisdiction: caseData.jurisdiction,
-            plaintiff: caseData.plaintiff,
-            defendant: caseData.defendant,
-            claims: caseData.claims.map((c) => c.claimType),
-          }, combinedContext),
+          content: buildFactsIntakeUserPrompt(
+            narrative ||
+              "Extract litigation facts from the selected meeting/call transcript.",
+            {
+              title: caseData.title,
+              courtType: caseData.courtType,
+              jurisdiction: caseData.jurisdiction,
+              plaintiff: caseData.plaintiff,
+              defendant: caseData.defendant,
+              claims: caseData.claims.map((c) => c.claimType),
+            },
+            combinedContext,
+          ),
         },
       ],
       { temperature: 0.25, maxTokens: 8192 },
@@ -114,6 +103,7 @@ export async function POST(
     if (!apply) {
       return NextResponse.json({
         suggestion,
+        transcriptId,
         documents: { total: documentCount, withExtractedText: withTextCount },
       });
     }
@@ -123,7 +113,7 @@ export async function POST(
         suggestion.facts.map((f) =>
           tx.fact.create({
             data: {
-              caseId: id,
+              caseId,
               statement: f.statement,
               date: f.date ? new Date(f.date) : null,
               category: f.category as
@@ -134,7 +124,7 @@ export async function POST(
                 | "WITNESS"
                 | "DOCUMENT"
                 | "OTHER",
-              source: f.source ?? null,
+              source: f.source ?? transcript.title,
             },
           }),
         ),
@@ -144,7 +134,7 @@ export async function POST(
         suggestion.timeline.map((t) =>
           tx.timelineEntry.create({
             data: {
-              caseId: id,
+              caseId,
               date: new Date(t.date),
               title: t.title,
               description: t.description ?? null,
@@ -157,7 +147,7 @@ export async function POST(
         suggestion.witnesses.map((w) =>
           tx.witness.create({
             data: {
-              caseId: id,
+              caseId,
               name: w.name,
               contact: w.contact ?? null,
               statement: w.statement ?? null,
@@ -170,7 +160,7 @@ export async function POST(
         suggestion.damages.map((d) =>
           tx.damages.create({
             data: {
-              caseId: id,
+              caseId,
               category: d.category,
               amount: d.amount,
               description: d.description ?? null,
@@ -180,7 +170,7 @@ export async function POST(
       );
 
       await tx.case.update({
-        where: { id },
+        where: { id: caseId },
         data: { status: "FACTS" },
       });
 
@@ -195,18 +185,16 @@ export async function POST(
     return NextResponse.json({
       suggestion,
       applied: created,
+      transcriptId,
       documents: { total: documentCount, withExtractedText: withTextCount },
     });
   } catch (error) {
     if (error instanceof AiNotConfiguredError) {
       return NextResponse.json({ error: error.message }, { status: 503 });
     }
-    console.error("Facts intake AI error:", error);
+    console.error("Transcript analyze error:", error);
     return NextResponse.json(
-      {
-        error:
-          "Failed to generate fact suggestions. Check AI settings and try again.",
-      },
+      { error: "Failed to analyze transcript. Check AI settings and try again." },
       { status: 500 },
     );
   }
