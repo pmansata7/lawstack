@@ -99,7 +99,7 @@ function parseJsonTranscript(data: unknown): ParsedTranscriptImport | null {
 
   const externalId = pickString(obj.id) ?? pickString(obj.document_id);
 
-  let segments =
+  const segments =
     parseGranolaOfficialSegments(obj.transcript) ??
     parseRileyCxSegments(obj.transcript_segments);
 

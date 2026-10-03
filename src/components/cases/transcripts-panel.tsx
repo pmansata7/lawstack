@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Card,
   CardContent,
@@ -55,7 +55,7 @@ export function TranscriptsPanel({
   initialTranscripts: CaseTranscriptSummary[];
 }) {
   const router = useRouter();
-  const [transcripts, setTranscripts] = useState(initialTranscripts);
+  const transcripts = initialTranscripts;
   const [selectedId, setSelectedId] = useState<string | null>(
     initialTranscripts[0]?.id ?? null,
   );
@@ -72,22 +72,9 @@ export function TranscriptsPanel({
   const chunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setTranscripts(initialTranscripts);
-    if (
-      selectedId &&
-      !initialTranscripts.some((t) => t.id === selectedId)
-    ) {
-      setSelectedId(initialTranscripts[0]?.id ?? null);
-    }
-  }, [initialTranscripts, selectedId]);
-
-  const refreshList = useCallback(async () => {
-    const res = await fetch(`/api/cases/${caseId}/transcripts`);
-    if (!res.ok) return;
-    const data = await res.json();
-    setTranscripts(data.transcripts ?? []);
-  }, [caseId]);
+  const selected =
+    transcripts.find((t) => t.id === selectedId) ?? transcripts[0] ?? null;
+  const effectiveSelectedId = selected?.id ?? null;
 
   const startRecording = async () => {
     try {
@@ -141,7 +128,6 @@ export function TranscriptsPanel({
             : "Saved — add OpenAI key in Settings to auto-transcribe.",
       });
       setRecordingTitle("");
-      await refreshList();
       router.refresh();
       if (data.transcript?.id) setSelectedId(data.transcript.id);
     } catch (e) {
@@ -163,7 +149,6 @@ export function TranscriptsPanel({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Import failed");
       toast.success(`Imported “${data.transcript?.title ?? file.name}”`);
-      await refreshList();
       router.refresh();
       if (data.transcript?.id) setSelectedId(data.transcript.id);
     } catch (e) {
@@ -208,7 +193,6 @@ export function TranscriptsPanel({
           ? "This Granola note is already on the case"
           : `Imported “${data.transcript?.title}”`,
       );
-      await refreshList();
       router.refresh();
       if (data.transcript?.id) setSelectedId(data.transcript.id);
     } catch (e) {
@@ -228,7 +212,6 @@ export function TranscriptsPanel({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Transcription failed");
       toast.success("Transcript ready");
-      await refreshList();
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Transcription failed");
@@ -238,21 +221,23 @@ export function TranscriptsPanel({
   };
 
   const analyzeSelected = async () => {
-    if (!selectedId) {
+    if (!effectiveSelectedId) {
       toast.error("Select a transcript to analyze");
       return;
     }
-    const selected = transcripts.find((t) => t.id === selectedId);
-    if (selected?.status !== "READY") {
+    const selectedTranscript = transcripts.find(
+      (t) => t.id === effectiveSelectedId,
+    );
+    if (selectedTranscript?.status !== "READY") {
       toast.error("Transcribe this recording before analyzing");
       return;
     }
 
-    setBusyId(selectedId);
+    setBusyId(effectiveSelectedId);
     try {
       const headers = await getAuthFetchHeaders();
       const res = await fetch(
-        `/api/cases/${caseId}/transcripts/${selectedId}/analyze`,
+        `/api/cases/${caseId}/transcripts/${effectiveSelectedId}/analyze`,
         {
           method: "POST",
           credentials: "same-origin",
@@ -291,7 +276,6 @@ export function TranscriptsPanel({
         { method: "DELETE" },
       );
       if (!res.ok) throw new Error("Delete failed");
-      setTranscripts((prev) => prev.filter((t) => t.id !== transcriptId));
       if (selectedId === transcriptId) {
         setSelectedId(null);
       }
@@ -302,7 +286,7 @@ export function TranscriptsPanel({
     }
   };
 
-  const selected = transcripts.find((t) => t.id === selectedId);
+  const selectedForAnalyze = selected;
 
   return (
     <div className="space-y-6">
@@ -549,16 +533,16 @@ export function TranscriptsPanel({
             />
             <Button
               type="button"
-              disabled={!selected || busyId === selectedId}
+              disabled={!selectedForAnalyze || busyId === effectiveSelectedId}
               onClick={() => void analyzeSelected()}
             >
-              {busyId === selectedId ? (
+              {busyId === effectiveSelectedId ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Sparkles className="mr-2 h-4 w-4" />
               )}
               Analyze selected transcript
-              {selected ? `: ${selected.title}` : ""}
+              {selectedForAnalyze ? `: ${selectedForAnalyze.title}` : ""}
             </Button>
           </div>
         </CardContent>
