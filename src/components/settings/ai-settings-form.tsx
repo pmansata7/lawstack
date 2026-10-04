@@ -59,10 +59,12 @@ export function AiSettingsForm({
     draftingModel: string;
     temperature: number;
     hasApiKey: boolean;
+    hasGranolaApiKey: boolean;
   };
 }) {
   const [settings, setSettings] = useState(initialSettings);
   const [apiKey, setApiKey] = useState("");
+  const [granolaApiKey, setGranolaApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -77,11 +79,13 @@ export function AiSettingsForm({
         body: JSON.stringify({
           ...settings,
           apiKey: apiKey || undefined,
+          granolaApiKey: granolaApiKey || undefined,
         }),
       });
       if (!res.ok) throw new Error("Failed to save settings");
       toast.success("AI settings saved");
       setApiKey("");
+      setGranolaApiKey("");
     } catch {
       toast.error("Failed to save settings");
     } finally {
@@ -161,7 +165,32 @@ export function AiSettingsForm({
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Your API key is stored encrypted and never shared.
+              Your API key is stored encrypted and never shared. OpenAI keys also
+              power Whisper transcription for in-app recordings.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="granolaApiKey">
+              Granola API Key{" "}
+              {settings.hasGranolaApiKey && (
+                <span className="text-xs text-green-600">
+                  (configured — enter new key to replace)
+                </span>
+              )}
+            </Label>
+            <Input
+              id="granolaApiKey"
+              type="password"
+              placeholder={
+                settings.hasGranolaApiKey ? "••••••••••••" : "grn_..."
+              }
+              value={granolaApiKey}
+              onChange={(e) => setGranolaApiKey(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              From Granola → Settings → Connectors → API keys. Used to browse and
+              import meeting transcripts into cases.
             </p>
           </div>
 

@@ -82,6 +82,7 @@ model Case {
   analyses        LegalAnalysis[]
   drafts          Draft[]
   collaborators   Collaboration[]
+  transcripts     CaseTranscript[]
 
   @@index([organizationId])
   @@map("cases")
@@ -179,6 +180,44 @@ enum EvidenceType {
   VIDEO
   AUDIO
   OTHER
+}
+
+// ─── Meeting / call transcripts ─────────────────────────────────────
+
+model CaseTranscript {
+  id              String             @id @default(cuid())
+  caseId          String             @map("case_id")
+  title           String
+  source          TranscriptSource
+  externalId      String?            @map("external_id")
+  content         String             @default("") @db.Text
+  segments        Json?
+  summary         String?            @db.Text
+  recordedAt      DateTime?          @map("recorded_at")
+  audioEvidenceId String?            @map("audio_evidence_id")
+  status          TranscriptStatus   @default(READY)
+  metadata        Json?
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  case            Case               @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@index([caseId, externalId])
+  @@map("case_transcripts")
+}
+
+enum TranscriptSource {
+  RECORDING
+  GRANOLA
+  IMPORT
+  MANUAL
+}
+
+enum TranscriptStatus {
+  PENDING_TRANSCRIPTION
+  READY
+  FAILED
 }
 
 // ─── Timeline ──────────────────────────────────────────────────────
@@ -330,6 +369,7 @@ model AiSetting {
   organizationId  String   @unique @map("organization_id")
   provider        String   @default("openai") // openai / anthropic / bedrock
   apiKey          String?  @map("api_key") // encrypted
+  granolaApiKey   String?  @map("granola_api_key")
   model           String   @default("gpt-4o")
   analysisModel   String?  @map("analysis_model")
   draftingModel   String?  @map("drafting_model")

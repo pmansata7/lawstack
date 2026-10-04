@@ -12,6 +12,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { NarrativeIntakeCard } from "@/components/ai/narrative-intake-card";
+import { TranscriptsPanel } from "@/components/cases/transcripts-panel";
 import { EvidenceUploadZone } from "@/components/cases/evidence-upload-zone";
 import { FactsIntakeReviewDialog } from "@/components/cases/facts-intake-review-dialog";
 import { FACTS_INTAKE_SAMPLE_PROMPTS } from "@/lib/ai/facts-intake-sample-prompts";
@@ -42,6 +43,17 @@ interface FactsTabsProps {
       type: string;
       fileName: string | null;
       fileUrl: string | null;
+    }>;
+    transcripts: Array<{
+      id: string;
+      title: string;
+      source: string;
+      status: string;
+      summary: string | null;
+      recordedAt: Date | null;
+      externalId: string | null;
+      createdAt: Date;
+      content: string;
     }>;
     timeline: Array<{
       id: string;
@@ -82,11 +94,18 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
 
   const factCount = initialData.facts.length;
   const docCount = initialData.evidence.length;
+  const transcriptCount = initialData.transcripts.length;
   const witnessCount = initialData.witnesses.length;
   const damageTotal = initialData.damages.reduce(
     (sum, d) => sum + d.amount,
     0,
   );
+
+  const readyTranscriptIds = initialData.transcripts
+    .filter(
+      (t) => t.status === "READY" && t.content.trim().length >= 20,
+    )
+    .map((t) => t.id);
 
   const requestIntake = async (
     narrative: string,
@@ -102,6 +121,9 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
         apply: options.apply,
         includeDocuments: !options.suggestion,
         ...(options.suggestion ? { suggestion: options.suggestion } : {}),
+        ...(readyTranscriptIds.length > 0 && !options.suggestion
+          ? { transcriptIds: readyTranscriptIds }
+          : {}),
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -179,12 +201,12 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
 
       <NarrativeIntakeCard
         title="AI fill facts & evidence"
-        description="Upload documents first, pick a sample prompt or add instructions, then generate for review. AI reads every uploaded file to build facts, timeline, witnesses, and damages."
-        placeholder="Optional: e.g. focus on repair timeline and warranty claims. Leave blank if the sample prompt or uploads alone are enough."
+        description="Upload documents or import transcripts in the Transcripts tab, pick a sample prompt or add instructions, then generate for review. AI reads uploads and optional notes to build facts, timeline, witnesses, and damages."
+        placeholder="Optional: e.g. focus on repair timeline and warranty claims. Leave blank if the sample prompt, uploads, or a transcript alone are enough."
         samplePrompts={FACTS_INTAKE_SAMPLE_PROMPTS}
         uploadedDocumentCount={docCount}
-        allowSubmitWithoutMinNarrative={docCount > 0}
-        minLength={docCount > 0 ? 0 : 20}
+        allowSubmitWithoutMinNarrative={docCount > 0 || transcriptCount > 0}
+        minLength={docCount > 0 || transcriptCount > 0 ? 0 : 20}
         submitLabel="Generate for review"
         secondarySubmitLabel="Add to case without review"
         onGenerate={async (narrative) => {
@@ -220,6 +242,9 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
           <TabsTrigger value="timeline">
             Timeline ({initialData.timeline.length})
           </TabsTrigger>
+          <TabsTrigger value="transcripts">
+            Transcripts ({transcriptCount})
+          </TabsTrigger>
           <TabsTrigger value="documents">
             Documents ({docCount})
           </TabsTrigger>
@@ -239,6 +264,22 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
         </TabsContent>
         <TabsContent value="timeline">
           <TimelineTab caseId={caseId} initialTimeline={initialData.timeline} />
+        </TabsContent>
+        <TabsContent value="transcripts">
+          <TranscriptsPanel
+            caseId={caseId}
+            initialTranscripts={initialData.transcripts.map((t) => ({
+              id: t.id,
+              title: t.title,
+              source: t.source,
+              status: t.status,
+              summary: t.summary,
+              recordedAt: t.recordedAt?.toISOString() ?? null,
+              externalId: t.externalId,
+              createdAt: t.createdAt.toISOString(),
+              preview: t.content.slice(0, 280),
+            }))}
+          />
         </TabsContent>
         <TabsContent value="documents">
           <DocumentsTab caseId={caseId} initialEvidence={initialData.evidence} />

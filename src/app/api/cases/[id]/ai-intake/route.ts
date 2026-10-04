@@ -13,6 +13,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { getCaseForOrganization } from "@/lib/cases/get-case-for-org";
 import { buildEvidenceContextForFactsIntake } from "@/lib/evidence/gather-evidence-for-intake";
+import { buildTranscriptsContextForIntake } from "@/lib/transcripts/build-transcript-context";
 import { applyFactsIntakeSuggestion } from "@/lib/cases/apply-facts-intake";
 
 export async function POST(
@@ -38,6 +39,11 @@ export async function POST(
       typeof body.narrative === "string" ? body.narrative.trim() : "";
     const includeDocuments = body.includeDocuments !== false;
     const apply = Boolean(body.apply);
+    const transcriptIds = Array.isArray(body.transcriptIds)
+      ? body.transcriptIds.filter(
+          (tid: unknown): tid is string => typeof tid === "string",
+        )
+      : [];
     const hasClientSuggestion = body.suggestion != null;
 
     if (apply && hasClientSuggestion) {
@@ -60,11 +66,26 @@ export async function POST(
 
     const hasDocuments = fullEvidenceList.length > 0;
 
-    if (narrative.length < 20 && !hasDocuments) {
+    const transcripts =
+      transcriptIds.length > 0
+        ? await prisma.caseTranscript.findMany({
+            where: {
+              caseId: id,
+              id: { in: transcriptIds },
+              status: "READY",
+            },
+          })
+        : [];
+
+    const hasTranscripts = transcripts.some(
+      (t) => t.content.trim().length >= 20,
+    );
+
+    if (narrative.length < 20 && !hasDocuments && !hasTranscripts) {
       return NextResponse.json(
         {
           error:
-            "Add a short description (20+ characters), pick a sample prompt, or upload at least one document.",
+            "Add a short description (20+ characters), pick a sample prompt, upload a document, or select a transcript for AI to analyze.",
         },
         { status: 400 },
       );
@@ -77,6 +98,11 @@ export async function POST(
 
     const { context: documentContext, documentCount: docsTotal, withTextCount } =
       await buildEvidenceContextForFactsIntake(fullEvidenceList, provider);
+
+    const transcriptContext = buildTranscriptsContextForIntake(transcripts);
+    const combinedContext = [transcriptContext, documentContext]
+      .filter(Boolean)
+      .join("\n\n---\n\n");
 
     const result = await provider.generateCompletion(
       [
@@ -93,7 +119,7 @@ export async function POST(
               defendant: caseData.defendant,
               claims: caseData.claims.map((c) => c.claimType),
             },
-            documentContext,
+            combinedContext,
           ),
         },
       ],
