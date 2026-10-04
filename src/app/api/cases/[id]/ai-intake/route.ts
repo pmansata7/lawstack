@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { getCaseForOrganization } from "@/lib/cases/get-case-for-org";
 import { buildEvidenceContextForFactsIntake } from "@/lib/evidence/gather-evidence-for-intake";
 import { buildTranscriptsContextForIntake } from "@/lib/transcripts/build-transcript-context";
+import { applyFactsIntakeSuggestion } from "@/lib/cases/apply-facts-intake";
 
 export async function POST(
   req: NextRequest,
@@ -43,15 +44,27 @@ export async function POST(
           (tid: unknown): tid is string => typeof tid === "string",
         )
       : [];
+    const hasClientSuggestion = body.suggestion != null;
 
-    const evidenceList = includeDocuments
+    if (apply && hasClientSuggestion) {
+      const suggestion = normalizeFactsIntake(body.suggestion);
+      const created = await applyFactsIntakeSuggestion(id, suggestion);
+      const total = await prisma.evidence.count({ where: { caseId: id } });
+      return NextResponse.json({
+        suggestion,
+        applied: created,
+        documents: { total, withExtractedText: total },
+      });
+    }
+
+    const fullEvidenceList = includeDocuments
       ? await prisma.evidence.findMany({
           where: { caseId: id },
           orderBy: { createdAt: "asc" },
         })
       : [];
 
-    const hasDocuments = evidenceList.length > 0;
+    const hasDocuments = fullEvidenceList.length > 0;
 
     const transcripts =
       transcriptIds.length > 0
@@ -64,13 +77,15 @@ export async function POST(
           })
         : [];
 
-    const hasTranscripts = transcripts.some((t) => t.content.trim().length >= 20);
+    const hasTranscripts = transcripts.some(
+      (t) => t.content.trim().length >= 20,
+    );
 
     if (narrative.length < 20 && !hasDocuments && !hasTranscripts) {
       return NextResponse.json(
         {
           error:
-            "Add a short description (20+ characters), upload a document, or select a transcript for AI to analyze.",
+            "Add a short description (20+ characters), pick a sample prompt, upload a document, or select a transcript for AI to analyze.",
         },
         { status: 400 },
       );
@@ -81,8 +96,8 @@ export async function POST(
       null,
     );
 
-    const { context: documentContext, documentCount, withTextCount } =
-      await buildEvidenceContextForFactsIntake(evidenceList, provider);
+    const { context: documentContext, documentCount: docsTotal, withTextCount } =
+      await buildEvidenceContextForFactsIntake(fullEvidenceList, provider);
 
     const transcriptContext = buildTranscriptsContextForIntake(transcripts);
     const combinedContext = [transcriptContext, documentContext]
@@ -94,14 +109,18 @@ export async function POST(
         { role: "system", content: buildFactsIntakeSystemPrompt() },
         {
           role: "user",
-          content: buildFactsIntakeUserPrompt(narrative, {
-            title: caseData.title,
-            courtType: caseData.courtType,
-            jurisdiction: caseData.jurisdiction,
-            plaintiff: caseData.plaintiff,
-            defendant: caseData.defendant,
-            claims: caseData.claims.map((c) => c.claimType),
-          }, combinedContext),
+          content: buildFactsIntakeUserPrompt(
+            narrative,
+            {
+              title: caseData.title,
+              courtType: caseData.courtType,
+              jurisdiction: caseData.jurisdiction,
+              plaintiff: caseData.plaintiff,
+              defendant: caseData.defendant,
+              claims: caseData.claims.map((c) => c.claimType),
+            },
+            combinedContext,
+          ),
         },
       ],
       { temperature: 0.25, maxTokens: 8192 },
@@ -114,88 +133,16 @@ export async function POST(
     if (!apply) {
       return NextResponse.json({
         suggestion,
-        documents: { total: documentCount, withExtractedText: withTextCount },
+        documents: { total: docsTotal, withExtractedText: withTextCount },
       });
     }
 
-    const created = await prisma.$transaction(async (tx) => {
-      const facts = await Promise.all(
-        suggestion.facts.map((f) =>
-          tx.fact.create({
-            data: {
-              caseId: id,
-              statement: f.statement,
-              date: f.date ? new Date(f.date) : null,
-              category: f.category as
-                | "INCIDENT"
-                | "BACKGROUND"
-                | "DAMAGES"
-                | "PROCEDURAL"
-                | "WITNESS"
-                | "DOCUMENT"
-                | "OTHER",
-              source: f.source ?? null,
-            },
-          }),
-        ),
-      );
-
-      const timeline = await Promise.all(
-        suggestion.timeline.map((t) =>
-          tx.timelineEntry.create({
-            data: {
-              caseId: id,
-              date: new Date(t.date),
-              title: t.title,
-              description: t.description ?? null,
-            },
-          }),
-        ),
-      );
-
-      const witnesses = await Promise.all(
-        suggestion.witnesses.map((w) =>
-          tx.witness.create({
-            data: {
-              caseId: id,
-              name: w.name,
-              contact: w.contact ?? null,
-              statement: w.statement ?? null,
-            },
-          }),
-        ),
-      );
-
-      const damages = await Promise.all(
-        suggestion.damages.map((d) =>
-          tx.damages.create({
-            data: {
-              caseId: id,
-              category: d.category,
-              amount: d.amount,
-              description: d.description ?? null,
-            },
-          }),
-        ),
-      );
-
-      await tx.case.update({
-        where: { id },
-        data: { status: "FACTS" },
-      });
-
-      return {
-        facts: facts.length,
-        timeline: timeline.length,
-        witnesses: witnesses.length,
-        damages: damages.length,
-      };
-    });
+    const created = await applyFactsIntakeSuggestion(id, suggestion);
 
     return NextResponse.json({
       suggestion,
       applied: created,
-      documents: { total: documentCount, withExtractedText: withTextCount },
+      documents: { total: docsTotal, withExtractedText: withTextCount },
     });
   } catch (error) {
     if (error instanceof AiNotConfiguredError) {

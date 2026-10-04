@@ -14,6 +14,9 @@ import { ArrowRight } from "lucide-react";
 import { NarrativeIntakeCard } from "@/components/ai/narrative-intake-card";
 import { TranscriptsPanel } from "@/components/cases/transcripts-panel";
 import { EvidenceUploadZone } from "@/components/cases/evidence-upload-zone";
+import { FactsIntakeReviewDialog } from "@/components/cases/facts-intake-review-dialog";
+import { FACTS_INTAKE_SAMPLE_PROMPTS } from "@/lib/ai/facts-intake-sample-prompts";
+import type { FactsIntakeSuggestion } from "@/lib/ai/intake-schemas";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getAuthFetchHeaders } from "@/lib/auth/auth-fetch-headers";
@@ -74,9 +77,20 @@ interface FactsTabsProps {
   };
 }
 
+type IntakeDocumentsMeta = {
+  total: number;
+  withExtractedText: number;
+};
+
 export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("facts");
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [pendingSuggestion, setPendingSuggestion] =
+    useState<FactsIntakeSuggestion | null>(null);
+  const [pendingDocuments, setPendingDocuments] =
+    useState<IntakeDocumentsMeta | null>(null);
 
   const factCount = initialData.facts.length;
   const docCount = initialData.evidence.length;
@@ -87,7 +101,16 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
     0,
   );
 
-  const handleAiFactsIntake = async (narrative: string) => {
+  const readyTranscriptIds = initialData.transcripts
+    .filter(
+      (t) => t.status === "READY" && t.content.trim().length >= 20,
+    )
+    .map((t) => t.id);
+
+  const requestIntake = async (
+    narrative: string,
+    options: { apply: boolean; suggestion?: FactsIntakeSuggestion },
+  ) => {
     const headers = await getAuthFetchHeaders();
     const res = await fetch(`/api/cases/${caseId}/ai-intake`, {
       method: "POST",
@@ -95,55 +118,120 @@ export function FactsTabs({ caseId, initialData }: FactsTabsProps) {
       headers,
       body: JSON.stringify({
         narrative,
-        apply: true,
-        includeDocuments: true,
+        apply: options.apply,
+        includeDocuments: !options.suggestion,
+        ...(options.suggestion ? { suggestion: options.suggestion } : {}),
+        ...(readyTranscriptIds.length > 0 && !options.suggestion
+          ? { transcriptIds: readyTranscriptIds }
+          : {}),
       }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       throw new Error(data.error ?? "AI intake failed");
     }
-
-    const applied = data.applied as {
-      facts: number;
-      timeline: number;
-      witnesses: number;
-      damages: number;
+    return data as {
+      suggestion: FactsIntakeSuggestion;
+      applied?: {
+        facts: number;
+        timeline: number;
+        witnesses: number;
+        damages: number;
+      };
+      documents?: IntakeDocumentsMeta;
     };
-    const docs = data.documents as
-      | { total: number; withExtractedText: number }
-      | undefined;
+  };
+
+  const handleGenerateForReview = async (narrative: string) => {
+    const data = await requestIntake(narrative, { apply: false });
+    setPendingSuggestion(data.suggestion);
+    setPendingDocuments(data.documents ?? null);
+    setReviewOpen(true);
+  };
+
+  const handleApplyFromReview = async () => {
+    if (!pendingSuggestion) return;
+    setApplying(true);
+    try {
+      const data = await requestIntake("", {
+        apply: true,
+        suggestion: pendingSuggestion,
+      });
+      const applied = data.applied!;
+      const docs = pendingDocuments;
+      const docNote =
+        docs && docs.total > 0
+          ? ` From ${docs.total} uploaded document${docs.total === 1 ? "" : "s"}.`
+          : "";
+      toast.success("Added to case — review your facts", {
+        description: `${applied.facts} facts, ${applied.timeline} timeline entries, ${applied.witnesses} witnesses, ${applied.damages} damages.${docNote}`,
+      });
+      setReviewOpen(false);
+      setPendingSuggestion(null);
+      setActiveTab("facts");
+      router.refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to add to case");
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  const handleAddDirectly = async (narrative: string) => {
+    const data = await requestIntake(narrative, { apply: true });
+    const applied = data.applied!;
+    const docs = data.documents;
     const docNote =
       docs && docs.total > 0
-        ? ` Analyzed ${docs.total} uploaded document${docs.total === 1 ? "" : "s"}${docs.withExtractedText < docs.total ? ` (${docs.withExtractedText} with extracted text)` : ""}.`
+        ? ` Analyzed ${docs.total} uploaded document${docs.total === 1 ? "" : "s"}.`
         : "";
     toast.success("AI added case details", {
       description: `${applied.facts} facts, ${applied.timeline} timeline entries, ${applied.witnesses} witnesses, ${applied.damages} damage items.${docNote}`,
     });
+    setActiveTab("facts");
     router.refresh();
   };
 
   return (
     <div className="space-y-6">
+      <EvidenceUploadZone
+        caseId={caseId}
+        onUploaded={() => router.refresh()}
+      />
+
       <NarrativeIntakeCard
         title="AI fill facts & evidence"
-        description="Upload documents below, then generate. AI reads all uploaded files (PDFs, text, etc.) plus any notes you add here, and creates facts, timeline events, witnesses, and damages you can edit afterward."
-        placeholder="Optional: add context or instructions (e.g. focus on repair timeline). Uploaded documents are analyzed automatically."
+        description="Upload documents or import transcripts in the Transcripts tab, pick a sample prompt or add instructions, then generate for review. AI reads uploads and optional notes to build facts, timeline, witnesses, and damages."
+        placeholder="Optional: e.g. focus on repair timeline and warranty claims. Leave blank if the sample prompt, uploads, or a transcript alone are enough."
+        samplePrompts={FACTS_INTAKE_SAMPLE_PROMPTS}
+        uploadedDocumentCount={docCount}
         allowSubmitWithoutMinNarrative={docCount > 0 || transcriptCount > 0}
         minLength={docCount > 0 || transcriptCount > 0 ? 0 : 20}
-        submitLabel="Generate & add to case"
+        submitLabel="Generate for review"
+        secondarySubmitLabel="Add to case without review"
         onGenerate={async (narrative) => {
           try {
-            await handleAiFactsIntake(narrative);
+            await handleGenerateForReview(narrative);
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "AI intake failed");
+          }
+        }}
+        onSecondaryGenerate={async (narrative) => {
+          try {
+            await handleAddDirectly(narrative);
           } catch (e) {
             toast.error(e instanceof Error ? e.message : "AI intake failed");
           }
         }}
       />
 
-      <EvidenceUploadZone
-        caseId={caseId}
-        onUploaded={() => router.refresh()}
+      <FactsIntakeReviewDialog
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+        suggestion={pendingSuggestion}
+        documents={pendingDocuments ?? undefined}
+        applying={applying}
+        onConfirm={handleApplyFromReview}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
