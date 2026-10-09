@@ -11,8 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, FolderOpen, Brain, PenLine } from "lucide-react";
+import { Plus, FolderOpen } from "lucide-react";
+import { DashboardCaseCard } from "@/components/dashboard/case-card";
 
 const dashboardCaseInclude = {
   _count: {
@@ -28,24 +28,6 @@ const dashboardCaseInclude = {
 type DashboardCase = Prisma.CaseGetPayload<{
   include: typeof dashboardCaseInclude;
 }>;
-
-const STATUS_LABELS: Record<string, string> = {
-  SETUP: "Setting Up",
-  FACTS: "Organizing Facts",
-  ANALYSIS: "Legal Analysis",
-  DRAFTING: "Drafting",
-  REVIEW: "In Review",
-  FILED: "Filed",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  SETUP: "bg-blue-100 text-blue-800",
-  FACTS: "bg-purple-100 text-purple-800",
-  ANALYSIS: "bg-amber-100 text-amber-800",
-  DRAFTING: "bg-indigo-100 text-indigo-800",
-  REVIEW: "bg-orange-100 text-orange-800",
-  FILED: "bg-green-100 text-green-800",
-};
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -109,50 +91,20 @@ export default async function DashboardPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {cases.map((c) => (
-            <Link key={c.id} href={`/cases/${c.id}/setup`}>
-              <Card className="cursor-pointer border-line transition-shadow hover:shadow-[0_8px_24px_-8px_rgba(7,20,51,0.12)]">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg">{c.title}</CardTitle>
-                    <Badge
-                      variant="secondary"
-                      className={STATUS_COLORS[c.status]}
-                    >
-                      {STATUS_LABELS[c.status]}
-                    </Badge>
-                  </div>
-                  <CardDescription>
-                    {c.courtType === "FEDERAL"
-                      ? "Federal"
-                      : c.courtType === "SMALL_CLAIMS"
-                        ? "Small Claims"
-                        : "State"}{" "}
-                    Court —{" "}
-                    {c.jurisdiction}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <FileText className="h-3.5 w-3.5" />
-                      {c._count.facts} facts
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <FolderOpen className="h-3.5 w-3.5" />
-                      {c._count.evidence} evidence
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Brain className="h-3.5 w-3.5" />
-                      {c._count.analyses} analyses
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <PenLine className="h-3.5 w-3.5" />
-                      {c._count.drafts} drafts
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+            <DashboardCaseCard
+              key={c.id}
+              id={c.id}
+              title={c.title}
+              status={c.status}
+              courtType={c.courtType}
+              jurisdiction={c.jurisdiction}
+              counts={{
+                facts: c._count.facts,
+                evidence: c._count.evidence,
+                analyses: c._count.analyses,
+                drafts: c._count.drafts,
+              }}
+            />
           ))}
         </div>
       )}
