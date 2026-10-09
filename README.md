@@ -59,7 +59,10 @@ For Supabase **Transaction pooler** (port **6543**), `DATABASE_URL` **must** inc
 
 ```bash
 npx prisma db push
+npm run db:rls
 ```
+
+`db:rls` applies Supabase row-level security policies via Prisma (no `psql` required). It reads `DATABASE_URL` from `.env`. Prefer `DIRECT_URL` (port 5432) in `.env` if the pooler rejects multi-statement SQL.
 
 If you use **Small Claims Court** and case creation fails with `invalid input value for enum "CourtType": "SMALL_CLAIMS"`, the Postgres enum was created before that value existed. Either run `npx prisma db push` again against your database, or in the Supabase SQL editor:
 
