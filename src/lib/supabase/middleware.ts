@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
 const protectedPaths = ["/dashboard", "/cases", "/settings"];
-const authPaths = ["/login", "/signup", "/forgot-password"];
+/** Logged-in users are sent to the app from these paths (not signup — org may still be missing). */
+const authPaths = ["/login", "/forgot-password"];
 
 export async function updateSession(request: NextRequest) {
   const supabaseConfig = getSupabaseConfig();
