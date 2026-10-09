@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { redirectRootAuthCallback } from "@/lib/auth/redirect-auth-callback";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
 const protectedPaths = ["/dashboard", "/cases", "/settings"];
@@ -7,6 +8,11 @@ const protectedPaths = ["/dashboard", "/cases", "/settings"];
 const authPaths = ["/login", "/forgot-password"];
 
 export async function updateSession(request: NextRequest) {
+  const authCallbackRedirect = redirectRootAuthCallback(request);
+  if (authCallbackRedirect) {
+    return authCallbackRedirect;
+  }
+
   const supabaseConfig = getSupabaseConfig();
   if (!supabaseConfig) {
     const isProtected = protectedPaths.some((p) =>
