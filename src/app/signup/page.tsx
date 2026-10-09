@@ -147,15 +147,15 @@ function SignupContent() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-hero-gradient px-4 py-12">
-      <Card className="w-full max-w-md border-line shadow-float">
+    <div className="flex min-h-screen items-center justify-center bg-paper px-4 py-12">
+      <Card className="w-full max-w-md border-hard bg-white shadow-hard">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 flex justify-center">
             <Logo />
           </div>
           <CardTitle>Create your account</CardTitle>
           <CardDescription>
-            Start building stronger cases today
+            Open a workspace for your firm or court team
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSignup}>

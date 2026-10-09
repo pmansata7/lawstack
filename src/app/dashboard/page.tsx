@@ -92,7 +92,7 @@ export default async function DashboardPage() {
       {cases.length === 0 ? (
         <Card className="flex flex-col items-center justify-center py-16">
           <CardContent className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-brand-600">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center border border-navy-950/10 bg-tint text-navy-950">
               <FolderOpen className="h-8 w-8" />
             </div>
             <h3 className="text-lg font-semibold">No cases yet</h3>
