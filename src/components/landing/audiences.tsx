@@ -1,69 +1,60 @@
 import Link from "next/link";
-import { Building2, Briefcase, Landmark, ChevronRight } from "lucide-react";
 
 const AUDIENCES = [
   {
     id: "law-firms",
-    icon: Building2,
-    title: "Law Firms",
+    title: "Law firms",
     description:
-      "Draft stronger pleadings, faster. Improve outcomes and client satisfaction.",
-    cta: "Learn More",
+      "Associates stop rebuilding the same fact matrix in Word for every new matter.",
+    href: "/signup?type=law-firms",
   },
   {
     id: "in-house",
-    icon: Briefcase,
-    title: "In-House Legal",
+    title: "In-house",
     description:
-      "Handle disputes efficiently with litigation-ready pleadings.",
-    cta: "Learn More",
+      "Disputes get a litigation-ready file without handing everything to outside counsel day one.",
+    href: "/signup?type=in-house",
   },
   {
     id: "courts",
-    icon: Landmark,
     title: "Courts",
     description:
-      "Support clearer, better-organized filings and more efficient dockets.",
-    cta: "Learn More",
+      "Clearer organization on the clerk’s side—fewer back-and-forth requests for missing pieces.",
+    href: "/signup?type=courts",
   },
 ];
 
 export function Audiences() {
   return (
-    <section className="scroll-mt-20 bg-white py-20 lg:py-24">
+    <section className="scroll-mt-16 bg-paper py-20 lg:py-24" id="teams">
       <div className="container-x">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="heading-serif text-[36px] leading-[1.08] sm:text-[42px] lg:text-[46px]">
-            A platform for every legal team.
+        <div className="max-w-xl">
+          <p className="eyebrow">Who it’s for</p>
+          <h2 className="heading-serif mt-4 text-[34px] leading-[1.06] sm:text-[40px]">
+            Same workflow, different docket pressure.
           </h2>
-          <p className="mt-5 text-pretty text-[16px] leading-[1.65] text-ink-600 lg:text-[17px]">
-            Different users. A stronger justice system.
-          </p>
         </div>
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
+
+        <div className="mt-12 grid gap-0 border border-navy-950/10 md:grid-cols-3">
           {AUDIENCES.map((aud) => (
-            <div
+            <article
               key={aud.id}
               id={aud.id}
-              className="group flex flex-col rounded-xl border border-line bg-white p-6 shadow-[0_1px_2px_rgba(7,20,51,0.03)] transition-shadow duration-300 hover:shadow-[0_8px_24px_-8px_rgba(7,20,51,0.12)]"
+              className="flex flex-col border-b border-navy-950/10 p-8 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
             >
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600 transition-colors group-hover:bg-brand-600 group-hover:text-white">
-                <aud.icon className="h-5 w-5" />
-              </div>
-              <h3 className="mt-5 font-serif text-[22px] font-semibold text-navy-950">
+              <h3 className="font-serif text-[22px] font-semibold text-navy-950">
                 {aud.title}
               </h3>
-              <p className="mt-2 flex-1 text-[14px] leading-[1.6] text-ink-600">
+              <p className="mt-3 flex-1 text-[15px] leading-[1.65] text-ink-600">
                 {aud.description}
               </p>
               <Link
-                href={`/signup?type=${aud.id}`}
-                className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-semibold text-brand-600 transition-colors hover:text-brand-700"
+                href={aud.href}
+                className="mt-6 inline-flex text-[13px] font-semibold text-navy-950 underline decoration-navy-950/30 underline-offset-4 hover:decoration-navy-950"
               >
-                {aud.cta}
-                <ChevronRight className="h-4 w-4" />
+                Request access
               </Link>
-            </div>
+            </article>
           ))}
         </div>
       </div>

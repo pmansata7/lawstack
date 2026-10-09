@@ -14,11 +14,11 @@ export function Logo({
   return (
     <Link
       href={href}
-      className={cn("inline-flex items-center gap-2 text-navy-950", className)}
+      className={cn("inline-flex items-center gap-2.5 text-navy-950", className)}
     >
-      <Scale className="h-7 w-7 shrink-0 text-brand-600" strokeWidth={2} />
+      <Scale className="h-6 w-6 shrink-0 text-navy-950" strokeWidth={1.75} />
       {showWordmark && (
-        <span className="font-serif text-xl font-semibold tracking-[-0.02em]">
+        <span className="font-serif text-lg font-semibold tracking-[-0.03em]">
           Lawstack
         </span>
       )}

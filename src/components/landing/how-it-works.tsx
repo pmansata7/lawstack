@@ -1,88 +1,70 @@
-import {
-  FileText,
-  FolderOpen,
-  Brain,
-  PenLine,
-  CheckCircle2,
-} from "lucide-react";
-
 const STEPS = [
   {
-    number: 1,
-    icon: FileText,
-    title: "Set up your case",
+    number: "01",
+    title: "Open the matter",
     description:
-      "Enter key details, choose jurisdiction, and define your claims.",
+      "Parties, court, and claims—pulled from templates, not scratch.",
   },
   {
-    number: 2,
-    icon: FolderOpen,
-    title: "Organize facts & evidence",
+    number: "02",
+    title: "Build the record",
     description:
-      "Upload documents, add timelines, witnesses, and supporting materials.",
+      "Timeline, uploads, witnesses, damages—each item tagged to the file.",
   },
   {
-    number: 3,
-    icon: Brain,
-    title: "AI legal analysis",
+    number: "03",
+    title: "Stress-test the theory",
     description:
-      "Map facts to legal elements and identify potential vulnerabilities.",
+      "Map facts to elements; flag gaps before opposing counsel does.",
   },
   {
-    number: 4,
-    icon: PenLine,
-    title: "Draft your pleading",
+    number: "04",
+    title: "Draft the pleading",
     description:
-      "Generate a structured complaint with citations and legal precision.",
+      "Generate a structured complaint with citations where you need them.",
   },
   {
-    number: 5,
-    icon: CheckCircle2,
-    title: "Review & file",
+    number: "05",
+    title: "Review and export",
     description:
-      "Refine, collaborate, and export for filing in state or federal court.",
+      "Comments, revisions, PDF/DOCX—then file with confidence.",
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="scroll-mt-20 bg-white py-20 lg:py-24">
+    <section
+      id="how-it-works"
+      className="scroll-mt-16 border-b border-navy-950/10 bg-paper py-20 lg:py-24"
+    >
       <div className="container-x">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="eyebrow text-brand-600">How Lawstack works</p>
-          <h2 className="heading-serif mt-4 text-balance text-[36px] leading-[1.08] sm:text-[42px] lg:text-[46px]">
-            A clearer path to a stronger case
+        <div className="max-w-xl">
+          <p className="eyebrow">Process</p>
+          <h2 className="heading-serif mt-4 text-[34px] leading-[1.06] sm:text-[40px] lg:text-[44px]">
+            Five stops from intake to export.
           </h2>
         </div>
 
-        <div className="mt-16">
-          <div className="grid gap-10 md:grid-cols-3 lg:grid-cols-5">
-            {STEPS.map((step, idx) => (
-              <div
-                key={step.number}
-                className="relative flex flex-col items-center text-center"
-              >
-                {idx < STEPS.length - 1 && (
-                  <div className="absolute left-1/2 top-5 hidden h-px w-full translate-x-1/2 bg-brand-200 lg:block" />
-                )}
-                <div className="relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-[13px] font-semibold text-white shadow-[0_4px_12px_-4px_rgba(0,88,232,0.5)]">
-                  {step.number}
-                </div>
-                <div className="mt-4 flex size-12 items-center justify-center rounded-full bg-brand-100 text-brand-600">
-                  <step.icon className="h-5 w-5" />
-                </div>
-                <div className="mt-4 flex flex-col gap-2">
-                  <h3 className="text-[15px] font-semibold text-navy-950">
-                    {step.title}
-                  </h3>
-                  <p className="text-[14px] leading-[1.6] text-ink-600">
-                    {step.description}
-                  </p>
-                </div>
+        <ol className="mt-14 space-y-0 border-t border-navy-950/10">
+          {STEPS.map((step) => (
+            <li
+              key={step.number}
+              className="grid gap-4 border-b border-navy-950/10 py-8 sm:grid-cols-[4.5rem_1fr] sm:gap-8"
+            >
+              <span className="font-mono text-[13px] font-medium text-ink-500">
+                {step.number}
+              </span>
+              <div>
+                <h3 className="font-serif text-[22px] font-semibold text-navy-950">
+                  {step.title}
+                </h3>
+                <p className="mt-2 max-w-2xl text-[15px] leading-[1.65] text-ink-600">
+                  {step.description}
+                </p>
               </div>
-            ))}
-          </div>
-        </div>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );

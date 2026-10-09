@@ -25,9 +25,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lawstack — Stronger cases start with better facts",
+  title: "Lawstack — Facts first. Filings that hold up.",
   description:
-    "Lawstack helps lawyers, law firms, and courts turn facts into evidence-backed pleadings that survive motions to dismiss and demurrers.",
+    "Lawstack connects facts, evidence, and draft pleadings in one litigation workspace for firms, in-house teams, and courts.",
 };
 
 export default function RootLayout({

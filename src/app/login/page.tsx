@@ -92,8 +92,8 @@ function LoginContent() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-hero-gradient px-4">
-      <Card className="w-full max-w-md border-line shadow-float">
+    <div className="flex min-h-screen items-center justify-center bg-paper px-4">
+      <Card className="w-full max-w-md border-hard bg-white shadow-hard">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 flex justify-center">
             <Logo />

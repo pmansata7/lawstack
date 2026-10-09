@@ -1,60 +1,50 @@
-import { TrendingDown, ShieldOff, TrendingUp } from "lucide-react";
-
 const STATS = [
   {
-    icon: TrendingDown,
     value: "60%",
-    highlight: "less time drafting",
-    sublabel: "initial pleadings",
+    label: "less time on first drafts",
+    note: "Based on design-partner interviews",
   },
   {
-    icon: ShieldOff,
-    value: "Fewer",
-    highlight: "motions to dismiss",
-    sublabel: "and demurrers",
+    value: "Earlier",
+    label: "visibility into 12(b)(6) gaps",
+    note: "Before service, not after",
   },
   {
-    icon: TrendingUp,
-    value: "Stronger",
-    highlight: "case outcomes",
-    sublabel: "",
+    value: "One",
+    label: "source of truth per case",
+    note: "Facts through export",
   },
 ];
 
 export function Stats() {
   return (
-    <section className="relative border-y border-line bg-tint py-20 lg:py-24">
+    <section className="border-b border-navy-950/10 bg-navy-950 py-20 text-white lg:py-24">
       <div className="container-x">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="heading-serif text-[36px] leading-[1.08] sm:text-[42px] lg:text-[46px]">
-            Better pleadings. Better outcomes.
+        <div className="max-w-xl">
+          <h2 className="font-serif text-[34px] font-semibold leading-[1.06] tracking-[-0.03em] sm:text-[40px]">
+            Measure what matters before you file.
           </h2>
-          <p className="mt-5 max-w-[500px] mx-auto text-pretty text-[16px] leading-[1.65] text-ink-600 lg:text-[17px]">
-            Law firms and courts use Lawstack to reduce motion risk, improve
-            efficiency, and deliver stronger results for their clients.
+          <p className="mt-4 text-[15px] leading-[1.7] text-white/75">
+            Teams use Lawstack to catch thin allegations early and ship cleaner
+            first filings.
           </p>
         </div>
-        <div className="mt-14 grid gap-10 md:grid-cols-3">
+
+        <dl className="mt-14 grid gap-10 border-t border-white/15 pt-14 md:grid-cols-3">
           {STATS.map((stat) => (
-            <div
-              key={stat.highlight}
-              className="flex flex-col items-center text-center"
-            >
-              <div className="flex size-11 items-center justify-center rounded-full bg-brand-100 text-brand-600">
-                <stat.icon className="h-5 w-5" />
-              </div>
-              <div className="mt-4 font-serif text-[30px] font-semibold leading-none text-brand-600 sm:text-[34px] lg:text-[38px]">
+            <div key={stat.label}>
+              <dt className="font-serif text-[36px] font-semibold leading-none sm:text-[42px]">
                 {stat.value}
-              </div>
-              <div className="mt-2 text-[15px] font-semibold text-navy-950">
-                {stat.highlight}
-              </div>
-              {stat.sublabel && (
-                <div className="text-[13px] text-ink-500">{stat.sublabel}</div>
-              )}
+              </dt>
+              <dd className="mt-3 text-[15px] font-medium text-white">
+                {stat.label}
+              </dd>
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-white/50">
+                {stat.note}
+              </p>
             </div>
           ))}
-        </div>
+        </dl>
       </div>
     </section>
   );
