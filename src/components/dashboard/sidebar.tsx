@@ -59,8 +59,8 @@ export function DashboardSidebar({
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-brand-600 text-white shadow-[0_4px_12px_-4px_rgba(0,88,232,0.45)]"
-                  : "text-ink-600 hover:bg-brand-50 hover:text-navy-950",
+                  ? "bg-navy-950 text-white"
+                  : "text-ink-600 hover:bg-tint hover:text-navy-950",
               )}
             >
               <item.icon className="h-4 w-4" />

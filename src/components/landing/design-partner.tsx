@@ -1,39 +1,27 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
 
 export function DesignPartner() {
   return (
     <section
       id="design-partner"
-      className="relative scroll-mt-20 overflow-hidden bg-partner-gradient py-20 text-white lg:py-24"
+      className="scroll-mt-16 border-t border-navy-950/10 bg-tint py-20 lg:py-24"
     >
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_80%_at_85%_50%,rgba(95,149,242,0.18),transparent_70%)]"
-        aria-hidden
-      />
-      <div className="container-x relative">
-        <div className="mx-auto max-w-2xl text-center">
-          <div className="mb-4 flex justify-center">
-            <div className="flex size-12 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
-              <Sparkles className="h-6 w-6 text-white" />
-            </div>
-          </div>
-          <p className="eyebrow text-white/80">Early access</p>
-          <h2 className="heading-serif mt-4 text-[36px] leading-[1.08] text-white sm:text-[42px] lg:text-[46px]">
-            Be a Design Partner
+      <div className="container-x">
+        <div className="border-hard max-w-2xl bg-white p-10 sm:p-12">
+          <p className="eyebrow">Design partners</p>
+          <h2 className="heading-serif mt-4 text-[32px] leading-[1.08] sm:text-[36px]">
+            Help shape the product—and get in early.
           </h2>
-          <p className="mt-4 max-w-[560px] mx-auto text-[16px] leading-[1.65] text-white/85">
-            We&apos;re working with a select group of law firms and courts to
-            shape the future of Lawstack. Apply to be a design partner and get
-            early access.
+          <p className="mt-4 text-[15px] leading-[1.7] text-ink-600">
+            We work with a small set of firms and courts on real matters. If
+            that sounds like you, tell us what your docket needs.
           </p>
           <Button
-            size="lg"
-            className="mt-8 h-11 rounded-lg bg-white px-6 text-[13.5px] font-semibold text-navy-950 hover:bg-white/90"
+            className="mt-8 h-11 rounded-md bg-navy-950 px-6 text-[13px] font-semibold hover:bg-navy-900"
             asChild
           >
-            <Link href="/signup?partner=1">Apply Now</Link>
+            <Link href="/signup?partner=1">Apply</Link>
           </Button>
         </div>
       </div>

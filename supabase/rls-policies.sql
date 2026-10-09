@@ -317,6 +317,43 @@ CREATE POLICY "members_can_delete_case_transcripts" ON case_transcripts
     )
   );
 
+-- ─── Case Transcripts ───────────────────────────────────────────────
+CREATE POLICY "members_can_read_case_transcripts" ON case_transcripts
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM cases c
+      JOIN org_members m ON m.organization_id = c.organization_id
+      WHERE c.id = case_transcripts.case_id AND m.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "members_can_insert_case_transcripts" ON case_transcripts
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM cases c
+      JOIN org_members m ON m.organization_id = c.organization_id
+      WHERE c.id = case_transcripts.case_id AND m.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "members_can_update_case_transcripts" ON case_transcripts
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM cases c
+      JOIN org_members m ON m.organization_id = c.organization_id
+      WHERE c.id = case_transcripts.case_id AND m.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "members_can_delete_case_transcripts" ON case_transcripts
+  FOR DELETE USING (
+    EXISTS (
+      SELECT 1 FROM cases c
+      JOIN org_members m ON m.organization_id = c.organization_id
+      WHERE c.id = case_transcripts.case_id AND m.user_id = auth.uid()
+    )
+  );
+
 -- ─── Storage: evidence bucket ───────────────────────────────────────
 -- Create the evidence bucket if it doesn't exist
 INSERT INTO storage.buckets (id, name, public)

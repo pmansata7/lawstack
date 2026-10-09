@@ -1,11 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { redirectRootAuthCallback } from "@/lib/auth/redirect-auth-callback";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
 const protectedPaths = ["/dashboard", "/cases", "/settings"];
-const authPaths = ["/login", "/signup"];
+/** Logged-in users are sent to the app from these paths (not signup — org may still be missing). */
+const authPaths = ["/login", "/forgot-password"];
 
 export async function updateSession(request: NextRequest) {
+  const authCallbackRedirect = redirectRootAuthCallback(request);
+  if (authCallbackRedirect) {
+    return authCallbackRedirect;
+  }
+
   const supabaseConfig = getSupabaseConfig();
   if (!supabaseConfig) {
     const isProtected = protectedPaths.some((p) =>

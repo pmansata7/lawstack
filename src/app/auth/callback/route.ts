@@ -1,55 +1,73 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { provisionOrgForAuthenticatedUser } from "@/lib/auth/complete-auth-session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route-handler";
+
+function safeNextPath(
+  next: string | null,
+  fallback: string,
+): string {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) {
+    return fallback;
+  }
+  return next;
+}
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = searchParams.get("next") ?? "/dashboard";
+  const defaultNext =
+    type === "recovery" ? "/auth/update-password" : "/dashboard";
+  const next = safeNextPath(searchParams.get("next"), defaultNext);
   const authError =
     searchParams.get("error_description") ?? searchParams.get("error");
 
-  if (authError) {
-    const loginUrl = new URL("/login", origin);
+  const loginRedirect = () => {
+    const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("error", "auth");
-    loginUrl.searchParams.set("message", authError);
+    if (authError) {
+      loginUrl.searchParams.set("message", authError);
+    }
     return NextResponse.redirect(loginUrl);
+  };
+
+  if (authError) {
+    return loginRedirect();
   }
 
   if (!isSupabaseConfigured()) {
-    return NextResponse.redirect(`${origin}/login?error=config`);
+    const configUrl = new URL("/login", request.url);
+    configUrl.searchParams.set("error", "config");
+    return NextResponse.redirect(configUrl);
   }
 
-  const supabase = await createSupabaseServerClient();
+  if (!code && !(tokenHash && type)) {
+    return loginRedirect();
+  }
+
+  const successRedirect = NextResponse.redirect(new URL(next, request.url));
+  const supabase = createSupabaseRouteHandlerClient(request, successRedirect);
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       console.error("Auth callback code exchange error:", error);
-      return NextResponse.redirect(`${origin}/login?error=auth`);
+      return loginRedirect();
     }
-
-    await provisionOrgForAuthenticatedUser(supabase);
-    return NextResponse.redirect(`${origin}${next}`);
-  }
-
-  if (tokenHash && type) {
+  } else if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type,
     });
     if (error) {
       console.error("Auth callback verifyOtp error:", error);
-      return NextResponse.redirect(`${origin}/login?error=auth`);
+      return loginRedirect();
     }
-
-    await provisionOrgForAuthenticatedUser(supabase);
-    return NextResponse.redirect(`${origin}${next}`);
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth`);
+  await provisionOrgForAuthenticatedUser(supabase);
+  return successRedirect;
 }
