@@ -4,6 +4,7 @@ import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getAuthCallbackUrl } from "@/lib/auth/site-url";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,8 @@ function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [magicLinkLoading, setMagicLinkLoading] = useState(false);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("error") === "config") {
@@ -91,6 +94,35 @@ function LoginContent() {
     router.refresh();
   };
 
+  const handleMagicLink = async () => {
+    if (!email) {
+      toast.error("Enter your email to receive a sign-in link.");
+      return;
+    }
+
+    setMagicLinkLoading(true);
+
+    const redirect = searchParams.get("redirect") ?? "/dashboard";
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: getAuthCallbackUrl(redirect),
+      },
+    });
+
+    setMagicLinkLoading(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setMagicLinkSent(true);
+    toast.success("Check your email for a sign-in link.");
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-paper px-4">
       <Card className="w-full max-w-md border-hard bg-white shadow-hard">
@@ -117,7 +149,15 @@ function LoginContent() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"
@@ -132,6 +172,26 @@ function LoginContent() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
+            </Button>
+            <div className="relative w-full">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-line" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={magicLinkLoading || magicLinkSent}
+              onClick={handleMagicLink}
+            >
+              {magicLinkLoading && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {magicLinkSent ? "Sign-in link sent" : "Email me a sign-in link"}
             </Button>
             <p className="text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}

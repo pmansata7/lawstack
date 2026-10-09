@@ -9,7 +9,9 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = searchParams.get("next") ?? "/dashboard";
+  const defaultNext =
+    type === "recovery" ? "/auth/update-password" : "/dashboard";
+  const next = searchParams.get("next") ?? defaultNext;
   const authError =
     searchParams.get("error_description") ?? searchParams.get("error");
 
