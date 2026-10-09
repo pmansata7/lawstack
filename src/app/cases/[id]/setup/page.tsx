@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Gavel } from "lucide-react";
+import { DeleteCaseDialog } from "@/components/cases/delete-case-dialog";
 import type { ReactNode } from "react";
 import {
   getClaimLabel,
@@ -101,7 +102,8 @@ export default async function CaseSetupPage({
         </Card>
       </div>
 
-      <div className="mt-8 flex justify-end">
+      <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-navy-950/10 pt-8">
+        <DeleteCaseDialog caseId={id} caseTitle={caseData.title} />
         <Button asChild>
           <Link href={`/cases/${id}/facts`}>
             Continue to Facts & Evidence
