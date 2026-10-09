@@ -196,6 +196,8 @@ model CaseTranscript {
   recordedAt      DateTime?          @map("recorded_at")
   audioEvidenceId String?            @map("audio_evidence_id")
   status          TranscriptStatus   @default(READY)
+  fraudSummary    String?            @map("fraud_summary") @db.Text
+  fraudElements   Json?              @map("fraud_elements")
   metadata        Json?
   createdAt       DateTime           @default(now()) @map("created_at")
   updatedAt       DateTime           @updatedAt @map("updated_at")

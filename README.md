@@ -69,6 +69,21 @@ ALTER TYPE "CourtType" ADD VALUE IF NOT EXISTS 'SMALL_CLAIMS';
 
 (Also available as `npm run db:small-claims-enum` when `DATABASE_URL` is set.)
 
+If you use the **Supabase CLI** (`supabase link` + `supabase db push`) and see:
+
+```text
+Found local migration files to be inserted before the last migration on remote database.
+```
+
+apply pending out-of-order migrations (for example `0008_interview_fraud_columns.sql` before `20251002000000_add_small_claims_court_type.sql` on remote):
+
+```bash
+npm run db:supabase:push
+# or: supabase db push --include-all
+```
+
+Prisma-only workflows can instead run `npx prisma db push` after pulling schema changes.
+
 ### 4. Run the development server
 
 ```bash
