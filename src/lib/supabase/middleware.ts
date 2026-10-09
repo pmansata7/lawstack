@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
 const protectedPaths = ["/dashboard", "/cases", "/settings"];
-const authPaths = ["/login", "/signup"];
+const authPaths = ["/login", "/signup", "/forgot-password"];
 
 export async function updateSession(request: NextRequest) {
   const supabaseConfig = getSupabaseConfig();
