@@ -62,7 +62,7 @@ npx prisma db push
 npm run db:rls
 ```
 
-`db:rls` applies Supabase row-level security policies via Prisma (no `psql` required). It reads `DATABASE_URL` from `.env`. Prefer `DIRECT_URL` (port 5432) in `.env` if the pooler rejects multi-statement SQL.
+`db:rls` applies Supabase row-level security policies via Prisma (no `psql` required). It reads `DATABASE_URL` from `.env`. Prefer `DIRECT_URL` (port 5432) in `.env` if the pooler rejects multi-statement SQL. Policies cast `auth.uid()` to `text` to match Prisma `user_id` columns.
 
 If you use **Small Claims Court** and case creation fails with `invalid input value for enum "CourtType": "SMALL_CLAIMS"`, the Postgres enum was created before that value existed. Either run `npx prisma db push` again against your database, or in the Supabase SQL editor:
 
