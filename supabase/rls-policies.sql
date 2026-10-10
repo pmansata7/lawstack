@@ -1,7 +1,7 @@
 -- ─── Lawstack Row-Level Security Policies ───────────────────────────
 -- Run this after `npx prisma db push` to enable RLS on all tables.
 -- All tables are scoped by organization_id via org_members.
--- Prisma maps user_id to TEXT; Supabase auth.uid()::text is UUID — compare as text.
+-- Prisma maps user_id to TEXT; Supabase auth.uid() is UUID — compare as text.
 
 -- Enable RLS on all tables
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
@@ -314,43 +314,6 @@ CREATE POLICY "members_can_delete_case_transcripts" ON case_transcripts
       SELECT 1 FROM cases c
       JOIN org_members m ON m.organization_id = c.organization_id
       WHERE c.id = case_transcripts.case_id AND m.user_id = auth.uid()::text
-    )
-  );
-
--- ─── Case Transcripts ───────────────────────────────────────────────
-CREATE POLICY "members_can_read_case_transcripts" ON case_transcripts
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM cases c
-      JOIN org_members m ON m.organization_id = c.organization_id
-      WHERE c.id = case_transcripts.case_id AND m.user_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "members_can_insert_case_transcripts" ON case_transcripts
-  FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM cases c
-      JOIN org_members m ON m.organization_id = c.organization_id
-      WHERE c.id = case_transcripts.case_id AND m.user_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "members_can_update_case_transcripts" ON case_transcripts
-  FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM cases c
-      JOIN org_members m ON m.organization_id = c.organization_id
-      WHERE c.id = case_transcripts.case_id AND m.user_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "members_can_delete_case_transcripts" ON case_transcripts
-  FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM cases c
-      JOIN org_members m ON m.organization_id = c.organization_id
-      WHERE c.id = case_transcripts.case_id AND m.user_id = auth.uid()
     )
   );
 
