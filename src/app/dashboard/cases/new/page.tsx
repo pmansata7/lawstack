@@ -55,6 +55,8 @@ export default function NewCasePage() {
     plaintiff: "",
     defendant: "",
     opposingParty: "",
+    partyRole: "PLAINTIFF" as "PLAINTIFF" | "DEFENDANT",
+    guidedSmallClaims: false,
   });
 
   const [selectedClaims, setSelectedClaims] = useState<ClaimTemplate[]>([]);
@@ -177,6 +179,9 @@ export default function NewCasePage() {
         body: JSON.stringify({
           ...caseData,
           courtType: effectiveCourtType,
+          guidedSmallClaims:
+            caseData.guidedSmallClaims ||
+            effectiveCourtType === "SMALL_CLAIMS",
           claims: selectedClaims.map((c) => ({
             claimType: c.type,
             jurisdiction: caseData.jurisdiction,
@@ -267,6 +272,52 @@ export default function NewCasePage() {
                   setCaseData({ ...caseData, title: e.target.value })
                 }
               />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="partyRole">Your role</Label>
+                <Select
+                  value={caseData.partyRole}
+                  onValueChange={(v: string | null) =>
+                    setCaseData({
+                      ...caseData,
+                      partyRole: (v ?? "PLAINTIFF") as "PLAINTIFF" | "DEFENDANT",
+                    })
+                  }
+                >
+                  <SelectTrigger id="partyRole" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PLAINTIFF">Plaintiff / petitioner</SelectItem>
+                    <SelectItem value="DEFENDANT">Defendant / respondent</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Defendant matters use answer-focused intake and drafting.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="guidedSc">Small claims guided path</Label>
+                <Select
+                  value={caseData.guidedSmallClaims ? "yes" : "no"}
+                  onValueChange={(v: string | null) =>
+                    setCaseData({
+                      ...caseData,
+                      guidedSmallClaims: v === "yes",
+                    })
+                  }
+                >
+                  <SelectTrigger id="guidedSc" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no">Standard workflow</SelectItem>
+                    <SelectItem value="yes">Guided small claims</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

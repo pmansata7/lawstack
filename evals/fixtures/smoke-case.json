@@ -1,0 +1,9 @@
+{
+  "title": "Eval — Deposit dispute",
+  "jurisdiction": "ca-small-claims",
+  "courtType": "SMALL_CLAIMS",
+  "claimTypes": ["security_deposit"],
+  "narrative": "Tenant moved out March 1 2025 in Oakland. Landlord kept $2000 deposit without itemized statement.",
+  "expectedClaimLabels": ["Security Deposit"],
+  "minFactsAfterIntake": 2
+}

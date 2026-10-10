@@ -1,4 +1,4 @@
-import { Prisma, type Case, type Claim } from "@prisma/client";
+import { Prisma, type Case, type Claim, type PartyRole } from "@prisma/client";
 import type { CaseCourtType } from "@/lib/legal/claim-templates";
 import {
   isPreparedStatementPoolerError,
@@ -22,6 +22,8 @@ export type CreateCaseInput = {
   plaintiff?: string | null;
   defendant?: string | null;
   opposingParty?: string | null;
+  partyRole?: PartyRole;
+  guidedSmallClaims?: boolean;
   claims?: CreateCaseClaimInput[];
 };
 
@@ -47,6 +49,8 @@ export async function createCaseWithClaims(
       plaintiff: emptyToNull(input.plaintiff),
       defendant: emptyToNull(input.defendant),
       opposingParty: emptyToNull(input.opposingParty),
+      partyRole: input.partyRole ?? "PLAINTIFF",
+      guidedSmallClaims: input.guidedSmallClaims ?? false,
       status: "SETUP",
     },
   });
