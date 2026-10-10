@@ -38,6 +38,7 @@ model OrgMember {
   userId          String   @map("user_id")
   email           String
   role            OrgRole  @default(ATTORNEY)
+  onboarding      Json?    @map("onboarding")
   createdAt       DateTime @default(now()) @map("created_at")
 
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)

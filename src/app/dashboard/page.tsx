@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Plus, FolderOpen } from "lucide-react";
 import { DashboardCaseCard } from "@/components/dashboard/case-card";
+import { DashboardHomeIntro } from "@/components/dashboard/dashboard-home";
 
 const dashboardCaseInclude = {
   _count: {
@@ -55,6 +56,8 @@ export default async function DashboardPage() {
           {loadError}
         </p>
       )}
+      <DashboardHomeIntro />
+
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="font-serif text-2xl font-semibold text-navy-950">
@@ -79,13 +82,16 @@ export default async function DashboardPage() {
             </div>
             <h3 className="text-lg font-semibold">No cases yet</h3>
             <p className="mb-4 mt-1 text-sm text-muted-foreground">
-              Create your first case to start building a stronger pleading.
+              Paste a client narrative for AI intake, or load the example matter
+              from the checklist above.
             </p>
-            <Button asChild>
-              <Link href="/dashboard/cases/new">
-                <Plus className="mr-2 h-4 w-4" /> Create Your First Case
-              </Link>
-            </Button>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button asChild>
+                <Link href="/dashboard/cases/new">
+                  <Plus className="mr-2 h-4 w-4" /> Create Your First Case
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (

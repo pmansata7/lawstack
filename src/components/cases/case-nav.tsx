@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { CaseWorkflowProgress } from "@/lib/cases/case-workflow-progress";
 
 const STEPS = [
   { href: "setup", label: "Setup", icon: Settings },
@@ -18,14 +19,16 @@ const STEPS = [
   { href: "analysis", label: "Legal analysis", icon: Brain },
   { href: "draft", label: "Draft", icon: PenLine },
   { href: "review", label: "Review & file", icon: FileCheck },
-];
+] as const;
 
 export function CaseNav({
   caseId,
   caseTitle,
+  workflow,
 }: {
   caseId: string;
   caseTitle: string;
+  workflow: CaseWorkflowProgress;
 }) {
   const pathname = usePathname();
 
@@ -47,6 +50,7 @@ export function CaseNav({
           const href = `/cases/${caseId}/${step.href}`;
           const isActive =
             pathname === href || pathname.startsWith(href + "/");
+          const state = workflow[step.href];
           return (
             <Link
               key={step.href}
@@ -58,6 +62,17 @@ export function CaseNav({
                   : "text-ink-600 hover:bg-tint hover:text-navy-950",
               )}
             >
+              <span
+                className={cn(
+                  "h-1.5 w-1.5 shrink-0 rounded-full",
+                  state === "complete" && "bg-emerald-500",
+                  state === "current" &&
+                    (isActive ? "bg-white" : "bg-navy-950"),
+                  state === "upcoming" &&
+                    (isActive ? "bg-white/50" : "bg-ink-300"),
+                )}
+                aria-hidden
+              />
               <step.icon className="h-4 w-4 shrink-0 opacity-90" />
               <span className="leading-tight">{step.label}</span>
             </Link>
