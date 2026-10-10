@@ -44,7 +44,11 @@ export function buildOnboardingSteps(input: {
   hasFactsOrEvidence: boolean;
   hasAnalysis: boolean;
   manualSteps: Partial<Record<OnboardingStepId, boolean>>;
+  orgType?: string;
+  role?: string;
 }): OnboardingStepView[] {
+  const orgType = input.orgType ?? "LAW_FIRM";
+  const role = input.role ?? "ATTORNEY";
   const openMatterDone =
     input.caseCount > 0 || Boolean(input.manualSteps.open_matter);
   const buildRecordDone =
@@ -52,28 +56,40 @@ export function buildOnboardingSteps(input: {
   const runAnalysisDone =
     input.hasAnalysis || Boolean(input.manualSteps.run_analysis);
 
+  const openMatterCopy =
+    orgType === "COURT"
+      ? "Open a self-help or court-assisted matter with guided small claims when applicable."
+      : orgType === "IN_HOUSE"
+        ? "Start from a business dispute narrative or load the example matter."
+        : "Start from a short narrative with AI intake, or load the example Smith v. Acme matter.";
+
+  const recordCopy =
+    role === "PARALEGAL"
+      ? "Upload documents and complete adaptive intake Q&A for the attorney."
+      : "Add facts, uploads, timeline, witnesses, and damages—then map them to claim elements.";
+
   return [
     {
       id: "configure_ai",
-      title: "Connect AI",
+      title: orgType === "COURT" ? "Connect AI (optional)" : "Connect AI",
       description:
-        "Add your firm’s API key or use server env keys so intake, analysis, and drafting can run.",
+        orgType === "COURT"
+          ? "Courts can use server keys for self-help intake; firms should add org API keys."
+          : "Add your firm’s API key or use server env keys so intake, analysis, and drafting can run.",
       href: "/settings/ai",
       done: input.aiReady || Boolean(input.manualSteps.configure_ai),
     },
     {
       id: "open_matter",
       title: "Open a matter",
-      description:
-        "Start from a short narrative with AI intake, or load the example Smith v. Acme matter.",
+      description: openMatterCopy,
       href: "/dashboard/cases/new",
       done: openMatterDone,
     },
     {
       id: "build_record",
       title: "Build the record",
-      description:
-        "Add facts, uploads, timeline, witnesses, and damages—then map them to claim elements.",
+      description: recordCopy,
       href: input.caseCount > 0 ? "/dashboard" : "/dashboard/cases/new",
       done: buildRecordDone,
     },
@@ -81,7 +97,7 @@ export function buildOnboardingSteps(input: {
       id: "run_analysis",
       title: "Stress-test the theory",
       description:
-        "Run legal analysis to surface element gaps, dismissal risk, and procedural checklist items.",
+        "Run legal analysis to surface element gaps, dismissal risk, and jurisdiction rule packs.",
       href: "/dashboard",
       done: runAnalysisDone,
     },

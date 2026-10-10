@@ -21,6 +21,14 @@ import {
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { WorkflowTooltip } from "@/components/cases/workflow-tooltips";
 
 interface DraftViewProps {
   caseId: string;
@@ -56,6 +64,8 @@ interface DraftViewProps {
 export function DraftView({ caseId, caseData }: DraftViewProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [draftType, setDraftType] = useState<string>("COMPLAINT");
+  const [motionKind, setMotionKind] = useState<string>("MTD_RESPONSE");
   const latestDraft = caseData.drafts[0];
 
   const handleGenerate = async () => {
@@ -63,12 +73,17 @@ export function DraftView({ caseId, caseData }: DraftViewProps) {
     try {
       const res = await fetch(`/api/cases/${caseId}/draft`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: draftType,
+          motionKind: draftType === "MOTION" ? motionKind : undefined,
+        }),
       });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error ?? "Draft generation failed");
       }
-      toast.success("Complaint draft generated");
+      toast.success("Draft generated");
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Draft generation failed");
@@ -97,10 +112,39 @@ export function DraftView({ caseId, caseData }: DraftViewProps) {
               : "Generate a complete, court-ready complaint with citations, element-based pleading, and Iqbal/Twombly plausibility compliance."}
           </p>
           {!loading && (
-            <Button onClick={handleGenerate} size="lg">
-              <Sparkles className="mr-2 h-4 w-4" />
-              Generate Draft Complaint
-            </Button>
+            <div className="mx-auto flex max-w-md flex-col items-center gap-3">
+              <div className="flex w-full items-center justify-center gap-2">
+                <span className="text-sm font-medium">Document type</span>
+                <WorkflowTooltip step="draft" />
+              </div>
+              <Select value={draftType} onValueChange={(v) => setDraftType(v ?? "COMPLAINT")}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="COMPLAINT">Complaint</SelectItem>
+                  <SelectItem value="ANSWER">Answer (defendant)</SelectItem>
+                  <SelectItem value="MOTION">Motion</SelectItem>
+                  <SelectItem value="AMENDMENT">Amended complaint</SelectItem>
+                </SelectContent>
+              </Select>
+              {draftType === "MOTION" && (
+                <Select value={motionKind} onValueChange={(v) => setMotionKind(v ?? "MTD_RESPONSE")}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MTD_RESPONSE">Opposition to MTD</SelectItem>
+                    <SelectItem value="MOTION_TO_COMPEL">Motion to compel</SelectItem>
+                    <SelectItem value="OPPOSITION">Opposition brief</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+              <Button onClick={handleGenerate} size="lg" className="w-full">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generate draft
+              </Button>
+            </div>
           )}
           {loading && (
             <div className="mx-auto max-w-md space-y-2 text-left">

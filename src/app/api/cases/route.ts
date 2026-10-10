@@ -8,6 +8,8 @@ import {
   type CreateCaseClaimInput,
 } from "@/lib/cases/create-case";
 import { updateWorkspaceOnboarding } from "@/lib/onboarding/workspace-onboarding";
+import { logAnalyticsEvent } from "@/lib/analytics/log-event";
+import type { PartyRole } from "@prisma/client";
 
 function parseClaims(raw: unknown): CreateCaseClaimInput[] | null {
   if (raw === undefined || raw === null) {
@@ -44,6 +46,8 @@ export async function POST(req: NextRequest) {
       plaintiff,
       defendant,
       opposingParty,
+      partyRole,
+      guidedSmallClaims,
       claims: rawClaims,
     } = body;
 
@@ -79,7 +83,20 @@ export async function POST(req: NextRequest) {
       plaintiff,
       defendant,
       opposingParty,
+      partyRole: partyRole as PartyRole | undefined,
+      guidedSmallClaims: Boolean(guidedSmallClaims),
       claims,
+    });
+
+    await logAnalyticsEvent(session.orgId, session.id, "case.created", {
+      courtType,
+      partyRole,
+    });
+
+    await updateWorkspaceOnboarding(session.id, session.orgId, {
+      markStep: "open_matter",
+    }).catch((err) => {
+      console.warn("Onboarding step update skipped:", err);
     });
 
     return NextResponse.json({ caseId: newCase.id, case: newCase });

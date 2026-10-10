@@ -20,8 +20,10 @@ model Organization {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  members   OrgMember[]
-  cases     Case[]
+  members          OrgMember[]
+  cases            Case[]
+  firmTemplates    FirmTemplate[]
+  analyticsEvents  AnalyticsEvent[]
 
   @@map("organizations")
 }
@@ -70,6 +72,8 @@ model Case {
   defendant       String?
   opposingParty   String?
   status          CaseStatus @default(SETUP)
+  partyRole       PartyRole  @default(PLAINTIFF) @map("party_role")
+  guidedSmallClaims Boolean  @default(false) @map("guided_small_claims")
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
 
@@ -84,6 +88,8 @@ model Case {
   drafts          Draft[]
   collaborators   Collaboration[]
   transcripts     CaseTranscript[]
+  intakeSession   IntakeSession?
+  tasks           CaseTask[]
 
   @@index([organizationId])
   @@map("cases")
@@ -102,6 +108,11 @@ enum CaseStatus {
   DRAFTING
   REVIEW
   FILED
+}
+
+enum PartyRole {
+  PLAINTIFF
+  DEFENDANT
 }
 
 // ─── Claims ────────────────────────────────────────────────────────
@@ -308,6 +319,8 @@ model Draft {
   citations   Json         // [{ citation, source, factId }]
   version     Int          @default(1)
   status      DraftStatus  @default(DRAFT)
+  reviewReport Json?       @map("review_report")
+  motionKind  String?      @map("motion_kind")
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -363,6 +376,88 @@ model Comment {
 
   @@index([draftId])
   @@map("comments")
+}
+
+// ─── Adaptive intake sessions ───────────────────────────────────────
+
+model IntakeSession {
+  id                String   @id @default(cuid())
+  caseId            String   @unique @map("case_id")
+  phase             String   @default("active")
+  messages          Json     @default("[]")
+  pendingQuestions  Json?    @map("pending_questions")
+  coverage          Json?
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  case              Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@map("intake_sessions")
+}
+
+// ─── Firm templates ─────────────────────────────────────────────────
+
+model FirmTemplate {
+  id              String    @id @default(cuid())
+  organizationId  String    @map("organization_id")
+  name            String
+  draftType       DraftType @map("draft_type")
+  jurisdiction    String?
+  sections        Json
+  boilerplate     String?   @db.Text
+  isDefault       Boolean   @default(false) @map("is_default")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("firm_templates")
+}
+
+// ─── Matter tasks (collaboration) ───────────────────────────────────
+
+model CaseTask {
+  id              String     @id @default(cuid())
+  caseId          String     @map("case_id")
+  title           String
+  description     String?
+  assigneeEmail   String?    @map("assignee_email")
+  claimElement    String?    @map("claim_element")
+  status          TaskStatus @default(OPEN)
+  dueDate         DateTime?  @map("due_date")
+  createdByEmail  String     @map("created_by_email")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  case            Case       @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@index([assigneeEmail])
+  @@map("case_tasks")
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+}
+
+// ─── Product analytics ───────────────────────────────────────────────
+
+model AnalyticsEvent {
+  id              String   @id @default(cuid())
+  organizationId  String   @map("organization_id")
+  userId          String   @map("user_id")
+  name            String
+  properties      Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([name, createdAt])
+  @@map("analytics_events")
 }
 
 // ─── AI Provider Settings ───────────────────────────────────────────

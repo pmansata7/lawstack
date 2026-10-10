@@ -22,6 +22,7 @@ function hasEnvAiCredentials(): boolean {
 export async function getWorkspaceOnboarding(
   userId: string,
   organizationId: string,
+  context?: { orgType?: string; role?: string },
 ): Promise<{
   progress: OnboardingProgress;
   steps: OnboardingStepView[];
@@ -73,6 +74,8 @@ export async function getWorkspaceOnboarding(
     hasFactsOrEvidence,
     hasAnalysis,
     manualSteps: progress.manualSteps,
+    orgType: context?.orgType,
+    role: context?.role,
   });
 
   const primaryCaseId = orgCases[0]?.id;

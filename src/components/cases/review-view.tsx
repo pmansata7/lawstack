@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { DraftReviewPanel } from "@/components/cases/draft-review-panel";
+import { WorkflowTooltip } from "@/components/cases/workflow-tooltips";
 
 interface ReviewViewProps {
   caseId: string;
@@ -35,6 +37,7 @@ interface ReviewViewProps {
     citations: unknown;
     version: number;
     status: string;
+    reviewReport?: unknown;
     comments: Array<{
       id: string;
       userId: string;
@@ -69,6 +72,13 @@ export function ReviewView({
   const [commentSection, setCommentSection] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [integrationLoading, setIntegrationLoading] = useState<string | null>(null);
+  const reviewReport = draft?.reviewReport as {
+    overallScore?: number;
+    filingReady?: boolean;
+    summary?: string;
+    issues?: Array<{ severity: string; section: string; issue: string }>;
+  } | null;
 
   const sections = (draft?.sections as Array<{ heading: string; body: string; citations: string[] }>) ?? [];
   const strengths = (analysis?.strengths as string[]) ?? [];
@@ -262,6 +272,17 @@ export function ReviewView({
 
       {/* Sidebar: AI Insights + Export + Filing Checklist */}
       <div className="space-y-4">
+        {draft && (
+          <div className="flex items-center gap-2">
+            <DraftReviewPanel
+              caseId={caseId}
+              draftId={draft.id}
+              initialReport={reviewReport}
+            />
+            <WorkflowTooltip step="review" />
+          </div>
+        )}
+
         {/* AI Insights */}
         {analysis && (
           <Card>
@@ -397,7 +418,71 @@ export function ReviewView({
               label="Comments resolved"
               done={comments.length === 0 || comments.every((c) => c.resolved)}
             />
+            <ChecklistItem
+              label="Review agent passed"
+              done={Boolean(reviewReport?.filingReady)}
+            />
             <ChecklistItem label="Exported for filing" done={false} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Integrations</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              disabled={integrationLoading !== null}
+              onClick={async () => {
+                setIntegrationLoading("clio");
+                try {
+                  const res = await fetch("/api/integrations/clio/export", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ caseId }),
+                  });
+                  const data = await res.json();
+                  toast.success(data.message ?? "Clio export stub ready");
+                } catch {
+                  toast.error("Clio export failed");
+                } finally {
+                  setIntegrationLoading(null);
+                }
+              }}
+            >
+              {integrationLoading === "clio" && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Push to Clio (stub)
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              disabled={integrationLoading !== null}
+              onClick={async () => {
+                setIntegrationLoading("mycase");
+                try {
+                  const res = await fetch("/api/integrations/mycase/export", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ caseId }),
+                  });
+                  const data = await res.json();
+                  toast.success(data.message ?? "MyCase export stub ready");
+                } catch {
+                  toast.error("MyCase export failed");
+                } finally {
+                  setIntegrationLoading(null);
+                }
+              }}
+            >
+              {integrationLoading === "mycase" && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Push to MyCase (stub)
+            </Button>
           </CardContent>
         </Card>
 

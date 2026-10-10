@@ -5,6 +5,7 @@ import { AnalysisView } from "@/components/cases/analysis-view";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { WorkflowTooltip } from "@/components/cases/workflow-tooltips";
 
 export default async function AnalysisPage({
   params,
@@ -34,7 +35,10 @@ export default async function AnalysisPage({
     <div className="mx-auto max-w-5xl p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">AI Legal Analysis</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold">
+            AI Legal Analysis
+            <WorkflowTooltip step="analysis" />
+          </h1>
           <p className="text-muted-foreground">
             Map facts to legal elements and identify potential vulnerabilities.
           </p>

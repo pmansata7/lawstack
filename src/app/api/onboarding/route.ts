@@ -13,7 +13,10 @@ export async function GET() {
   }
 
   try {
-    const data = await getWorkspaceOnboarding(session.id, session.orgId);
+    const data = await getWorkspaceOnboarding(session.id, session.orgId, {
+      orgType: session.orgType,
+      role: session.role,
+    });
     return NextResponse.json(data);
   } catch (error) {
     console.error("Onboarding GET error:", error);
@@ -39,7 +42,10 @@ export async function PATCH(request: Request) {
       dismiss,
       markStep,
     });
-    const snapshot = await getWorkspaceOnboarding(session.id, session.orgId);
+    const snapshot = await getWorkspaceOnboarding(session.id, session.orgId, {
+      orgType: session.orgType,
+      role: session.role,
+    });
     return NextResponse.json({ ...snapshot, progress });
   } catch (error) {
     console.error("Onboarding PATCH error:", error);

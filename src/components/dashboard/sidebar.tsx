@@ -19,6 +19,9 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/cases", label: "Cases", icon: FolderOpen },
   { href: "/settings/ai", label: "AI Settings", icon: Brain },
+  { href: "/settings/templates", label: "Templates", icon: FolderOpen },
+  { href: "/settings/integrations", label: "Integrations", icon: Settings },
+  { href: "/settings/analytics", label: "Analytics", icon: Brain },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

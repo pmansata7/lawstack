@@ -8,6 +8,11 @@ import {
   buildCaseContext,
 } from "@/lib/ai/prompts";
 import { CLAIM_TEMPLATES } from "@/lib/legal/claim-templates";
+import {
+  getProceduralRulePack,
+  mergeProceduralChecklist,
+} from "@/lib/legal/procedural-rule-packs";
+import { logAnalyticsEvent } from "@/lib/analytics/log-event";
 
 export async function POST(
   _req: NextRequest,
@@ -82,6 +87,11 @@ export async function POST(
     }
 
     const analysis = JSON.parse(jsonStr);
+    const pack = getProceduralRulePack(caseData.jurisdiction);
+    const proceduralChecklist = mergeProceduralChecklist(
+      analysis.proceduralChecklist ?? [],
+      pack,
+    );
 
     // Save analysis
     const saved = await prisma.legalAnalysis.create({
@@ -93,10 +103,32 @@ export async function POST(
         dismissalRisk: analysis.dismissalRisk ?? "medium",
         riskReasoning: analysis.riskReasoning ?? "",
         citedCases: analysis.citedCases ?? [],
-        proceduralChecklist: analysis.proceduralChecklist ?? [],
+        proceduralChecklist,
         claimStrength: analysis.claimStrength ?? "moderate",
       },
     });
+
+    await logAnalyticsEvent(session.orgId, session.id, "analysis.run", {
+      caseId: id,
+      dismissalRisk: saved.dismissalRisk,
+    });
+
+    const elementMapping = (analysis.elementMapping ?? []) as Array<{
+      element?: string;
+      gaps?: string[];
+    }>;
+    for (const row of elementMapping) {
+      if (!row.gaps?.length) continue;
+      await prisma.caseTask.create({
+        data: {
+          caseId: id,
+          title: `Element gap: ${row.element ?? "claim element"}`,
+          description: row.gaps.join("; "),
+          claimElement: row.element ?? null,
+          createdByEmail: session.email,
+        },
+      });
+    }
 
     // Update case status
     await prisma.case.update({
