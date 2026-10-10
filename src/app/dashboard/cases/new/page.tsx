@@ -37,6 +37,7 @@ import {
 } from "@/lib/legal/claim-templates";
 import { getAuthFetchHeaders } from "@/lib/auth/auth-fetch-headers";
 import { NarrativeIntakeCard } from "@/components/ai/narrative-intake-card";
+import { CASE_INTAKE_SAMPLE_PROMPTS } from "@/lib/ai/case-intake-sample-prompts";
 
 type Step = "case" | "claims";
 
@@ -244,6 +245,7 @@ export default function NewCasePage() {
               title="AI case intake"
               description="Paste a short summary of the dispute. AI will suggest the caption, court, jurisdiction, parties, and claims."
               placeholder="Example: My landlord kept my $2,000 security deposit after I moved out of my Oakland apartment. I left the unit clean on March 1, 2025, but they never returned the deposit or sent an itemized statement."
+              samplePrompts={CASE_INTAKE_SAMPLE_PROMPTS}
               onGenerate={async (narrative) => {
                 try {
                   await handleAiCaseIntake(narrative);

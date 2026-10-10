@@ -142,7 +142,7 @@ function SignupContent() {
     }
 
     toast.success("Account created successfully");
-    router.push("/dashboard");
+    router.push("/dashboard?welcome=1");
     router.refresh();
   };
 

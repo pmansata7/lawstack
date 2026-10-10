@@ -7,6 +7,7 @@ import {
   getCreateCaseErrorMessage,
   type CreateCaseClaimInput,
 } from "@/lib/cases/create-case";
+import { updateWorkspaceOnboarding } from "@/lib/onboarding/workspace-onboarding";
 
 function parseClaims(raw: unknown): CreateCaseClaimInput[] | null {
   if (raw === undefined || raw === null) {

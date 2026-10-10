@@ -13,6 +13,7 @@ import {
   getCourtTypeLabel,
   type CaseCourtType,
 } from "@/lib/legal/claim-templates";
+import { CaseWorkflowGuide } from "@/components/cases/case-workflow-guide";
 
 export default async function CaseSetupPage({
   params,
@@ -29,8 +30,11 @@ export default async function CaseSetupPage({
 
   if (!caseData) notFound();
 
+  const isExample = caseData.title.includes("(Example)");
+
   return (
     <div className="mx-auto max-w-4xl p-6 lg:p-8">
+      <CaseWorkflowGuide caseId={id} isExample={isExample} />
       <h1 className="heading-serif mb-6 text-2xl">Case setup</h1>
 
       <div className="grid gap-6 md:grid-cols-2">
