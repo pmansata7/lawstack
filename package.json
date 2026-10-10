@@ -10,9 +10,9 @@
     "lint": "eslint",
     "seed": "npx tsx prisma/seed.ts",
     "db:push": "npx prisma db push",
-    "db:small-claims-enum": "psql \"$DATABASE_URL\" -f supabase/migrations/20251002000000_add_small_claims_court_type.sql",
+    "db:small-claims-enum": "prisma db execute --schema prisma/schema.prisma --file supabase/migrations/20251002000000_add_small_claims_court_type.sql",
     "db:supabase:push": "supabase db push --include-all",
-    "db:rls": "psql $DATABASE_URL -f supabase/rls-policies.sql"
+    "db:rls": "prisma db execute --schema prisma/schema.prisma --file supabase/rls-policies.sql"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
