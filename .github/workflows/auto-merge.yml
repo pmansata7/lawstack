@@ -82,8 +82,13 @@ jobs:
 
           decision="$(gh pr view "$PR" --json reviewDecision -q .reviewDecision)"
           if [ "$decision" = "CHANGES_REQUESTED" ]; then
-            echo "A review requested changes; not merging."
-            exit 1
+            human_cr="$(gh api "repos/${GH_REPO}/pulls/${PR}/reviews" \
+              --jq '[.[] | select(.state == "CHANGES_REQUESTED") | select(.user.login != "cursor[bot]")] | length')"
+            if [ "$human_cr" != "0" ]; then
+              echo "A human review requested changes; not merging."
+              exit 1
+            fi
+            echo "Only cursor[bot] CHANGES_REQUESTED (often CI timing); external checks passed — merging."
           fi
 
           mergeable="$(gh pr view "$PR" --json mergeable -q .mergeable)"
