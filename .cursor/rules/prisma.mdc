@@ -1,5 +1,5 @@
 ---
-description: Run Prisma and Supabase DB workflows when schema changes
+description: Run Prisma and DB workflows when schema or migrations change
 alwaysApply: true
 ---
 
@@ -16,11 +16,24 @@ Use **only** these npm scripts from `package.json`:
 
 ## When to run
 
-1. After editing `prisma/schema.prisma` → `npm run db:push` (or follow repo docs if migrations are added later).
-2. Use `db:supabase:push` when the task is to sync Supabase remote schema per team workflow.
+1. After editing `prisma/schema.prisma` → `npx prisma generate`, then `npx prisma migrate dev` when using migration folders (preferred for changes that ship to production). Commit new folders under `prisma/migrations/` with the schema change. Until the repo adopts migrations fully, `npm run db:push` may still be used for local-only sync per team convention.
+2. After pulling changes under `prisma/migrations/**` → `npx prisma generate` then `npx prisma migrate dev` (or `db:push` if no migrations yet).
+3. RLS and legacy Supabase SQL under `supabase/migrations/` — use `db:supabase:push`, `db:rls`, or `db:small-claims-enum` only when the task explicitly requires them.
 
 ## Warnings
 
 - `db:rls`, `db:small-claims-enum`, and `db:supabase:push` can apply **destructive or wide-reaching SQL**. Do **not** run them without explicit user approval unless the user’s task clearly requires it.
-- Do not run production deploy or destructive SQL against shared environments without explicit user request.
 - Prefer npm scripts over raw `prisma` / `supabase` CLI when a script exists.
+
+## Production (Vercel)
+
+Vercel **production** builds run `prisma migrate deploy` as part of `npm run build` (via `scripts/vercel-build.mjs`). Set **`DIRECT_URL`** to the direct Supabase host (port 5432), not only the pooler `DATABASE_URL`, so migrations use a direct connection.
+
+**Preview** PR builds skip `migrate deploy`. If `DIRECT_URL` is unset but `DATABASE_URL` is set, `scripts/ensure-prisma-env.mjs` copies `DATABASE_URL` into `DIRECT_URL` for `prisma generate` / install only — add `DATABASE_URL` (or `DIRECT_URL`) on Preview in Vercel so installs succeed.
+
+Agents create migrations in dev with `prisma migrate dev` and commit `prisma/migrations/`; production applies them on Vercel. Do not rely on `db:supabase:push` for routine schema ship to production.
+
+## Do not
+
+- Run `prisma migrate deploy` locally against **production** unless explicitly debugging.
+- Skip committing `prisma/migrations/` when you created a migration in dev.

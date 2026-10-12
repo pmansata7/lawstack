@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "node scripts/ensure-prisma-env.mjs && prisma generate",
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/vercel-build.mjs",
     "start": "next start",
     "lint": "eslint",
     "seed": "npx tsx prisma/seed.ts",

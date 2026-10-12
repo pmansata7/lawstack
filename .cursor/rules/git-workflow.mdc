@@ -9,3 +9,13 @@ alwaysApply: true
 - Small, low-risk changes may land on `main` directly when the user or team policy allows.
 - Use a pull request for large or risky work, unclear scope, or when the user asks for a PR.
 - Before pushing, run tests and lint when `package.json` defines them (for example `npm test`, `npm run lint`).
+
+## Ship to production (auto-merge label)
+
+When the user asks to **ship**, **merge to main**, or **deploy**:
+
+1. Open a PR to `main`, then add `<!-- auto-ship -->` to the PR body (or label **`auto-merge`** / **`ship`**).
+2. `.github/workflows/auto-ship-marker.yml` and `.github/workflows/auto-merge.yml` squash-merge when checks pass and no review is `CHANGES_REQUESTED`.
+3. See `.cursor/CLOUD.md` for the full Cloud Agent checklist (Prisma, Vercel on `main`, do not merge on red CI).
+
+Do not add `auto-merge` if CI is failing or the review bot requested changes.
