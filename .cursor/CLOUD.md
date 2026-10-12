@@ -27,6 +27,8 @@ If the user explicitly authorizes it and branch protection allows, you may push 
 
 Merging to `main` triggers **Vercel production** (GitHub integration already configured). The Vercel build runs `prisma migrate deploy` before `next build` on production only. No separate Supabase migrate workflow — schema ships via Prisma migrations in the repo. No extra deploy step in the agent workflow.
 
+**One-time (existing prod DB):** After the initial `prisma/migrations/*_baseline` lands, run locally once: `DATABASE_URL=... DIRECT_URL=... npx prisma migrate resolve --applied <baseline_folder_name>` against production Supabase **direct** URL so P3005 does not block deploy. See `.cursor/rules/prisma.mdc`.
+
 ## PR risk review
 
 Every PR runs `.github/workflows/pr-risk-review.yml` (requires repo secret `CURSOR_API_KEY`). Wait for that workflow and other checks before expecting auto-merge to succeed.
