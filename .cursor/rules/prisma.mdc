@@ -1,0 +1,26 @@
+---
+description: Run Prisma and Supabase DB workflows when schema changes
+alwaysApply: true
+---
+
+# Database / Prisma (Lawstack)
+
+Use **only** these npm scripts from `package.json`:
+
+| Script | Purpose |
+|--------|---------|
+| `db:push` | `npx prisma db push` — dev schema sync |
+| `db:small-claims-enum` | `prisma db execute` with `supabase/migrations/20251002000000_add_small_claims_court_type.sql` |
+| `db:supabase:push` | `supabase db push --include-all` |
+| `db:rls` | `prisma db execute` with `supabase/rls-policies.sql` |
+
+## When to run
+
+1. After editing `prisma/schema.prisma` → `npm run db:push` (or follow repo docs if migrations are added later).
+2. Use `db:supabase:push` when the task is to sync Supabase remote schema per team workflow.
+
+## Warnings
+
+- `db:rls`, `db:small-claims-enum`, and `db:supabase:push` can apply **destructive or wide-reaching SQL**. Do **not** run them without explicit user approval unless the user’s task clearly requires it.
+- Do not run production deploy or destructive SQL against shared environments without explicit user request.
+- Prefer npm scripts over raw `prisma` / `supabase` CLI when a script exists.
