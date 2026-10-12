@@ -18,7 +18,8 @@ Use **only** these npm scripts from `package.json`:
 
 1. After editing `prisma/schema.prisma` → `npx prisma generate`, then `npx prisma migrate dev` when using migration folders (preferred for changes that ship to production). Commit new folders under `prisma/migrations/` with the schema change. Until the repo adopts migrations fully, `npm run db:push` may still be used for local-only sync per team convention.
 2. After pulling changes under `prisma/migrations/**` → `npx prisma generate` then `npx prisma migrate dev` (or `db:push` if no migrations yet).
-3. RLS and legacy Supabase SQL under `supabase/migrations/` — use `db:supabase:push`, `db:rls`, or `db:small-claims-enum` only when the task explicitly requires them.
+3. **Supabase SQL** under `supabase/migrations/` — add new `.sql` files in a PR and commit them. Production applies them on push to `main` via **`.github/workflows/supabase-migrate.yml`** (same pattern as notestack). For local testing use `npm run db:supabase:push` only when the task requires it; do not rely on it for production ship.
+4. RLS and one-off scripts (`supabase/rls-policies.sql`, `db:rls`, `db:small-claims-enum`) — run only when the task explicitly requires them.
 
 ## Warnings
 
@@ -31,7 +32,14 @@ Vercel **production** builds run `prisma migrate deploy` as part of `npm run bui
 
 **Preview** PR builds skip `migrate deploy`. If `DIRECT_URL` is unset but `DATABASE_URL` is set, `scripts/ensure-prisma-env.mjs` copies `DATABASE_URL` into `DIRECT_URL` for `prisma generate` / install only — add `DATABASE_URL` (or `DIRECT_URL`) on Preview in Vercel so installs succeed.
 
-Agents create migrations in dev with `prisma migrate dev` and commit `prisma/migrations/`; production applies them on Vercel. Do not rely on `db:supabase:push` for routine schema ship to production.
+**Dual path (both can be used in one repo):**
+
+| Path | Folder | Applied on production |
+|------|--------|------------------------|
+| Prisma | `prisma/migrations/` | Vercel build (`prisma migrate deploy`) |
+| Supabase SQL | `supabase/migrations/` | GitHub Actions (`supabase-migrate.yml` on `main`) |
+
+Agents: Prisma schema changes → `prisma migrate dev` and commit `prisma/migrations/`. Supabase-only SQL (RLS tweaks, functions, legacy SQL) → new file under `supabase/migrations/` and commit. Do not apply production schema only via SQL Editor unless the user asks.
 
 ### One-time after baseline merge (existing production DB)
 

@@ -16,6 +16,6 @@ When the user asks to **ship**, **merge to main**, or **deploy**:
 
 1. Open a PR to `main`, then add `<!-- auto-ship -->` to the PR body (or label **`auto-merge`** / **`ship`**).
 2. `.github/workflows/auto-ship-marker.yml` and `.github/workflows/auto-merge.yml` squash-merge when checks pass and no review is `CHANGES_REQUESTED`.
-3. See `.cursor/CLOUD.md` for the full Cloud Agent checklist (Prisma, Vercel on `main`, do not merge on red CI).
+3. See `.cursor/CLOUD.md` for the full Cloud Agent checklist (Prisma on Vercel, Supabase SQL via Actions on `main`, do not merge on red CI).
 
 Do not add `auto-merge` if CI is failing or the review bot requested changes.

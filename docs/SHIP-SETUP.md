@@ -93,10 +93,27 @@ See [PRISMA-BASELINE-ONCE.md](./PRISMA-BASELINE-ONCE.md)
 
 ---
 
-## Step 6 — Day-to-day shipping
+## Step 6 — GitHub secrets (Supabase migrate workflow)
+
+One-time: **Settings → Secrets and variables → Actions** → add:
+
+| Secret | Where to get it |
+|--------|-----------------|
+| `SUPABASE_ACCESS_TOKEN` | [Account tokens](https://supabase.com/dashboard/account/tokens) — personal access token for the CLI |
+| `SUPABASE_PROJECT_REF` | Dashboard → **Project Settings → General → Reference ID** (exactly **20 lowercase letters**; the `<ref>` in `https://<ref>.supabase.co`) |
+| `SUPABASE_DB_PASSWORD` | **Project Settings → Database** → database password |
+
+The workflow [`.github/workflows/supabase-migrate.yml`](../.github/workflows/supabase-migrate.yml) validates `SUPABASE_PROJECT_REF` before `supabase link`. A wrong value (e.g. project display name) fails with a clear error.
+
+After secrets are set, push a change under `supabase/migrations/` to `main` (or run the workflow manually) to confirm **Supabase migrations** succeeds.
+
+---
+
+## Step 7 — Day-to-day shipping
 
 - Cloud Agent on `pmansata7/lawstack`; read `.cursor/CLOUD.md`.
-- Schema changes: `npx prisma migrate dev` locally → commit `prisma/migrations/*` in the PR.
+- **Prisma schema:** `npx prisma migrate dev` locally → commit `prisma/migrations/*` → applied on **Vercel production** (`prisma migrate deploy` during build).
+- **Supabase SQL:** add files under `supabase/migrations/` in the PR → applied on **`main`** by GitHub Actions (not Vercel).
 - PR body: `<!-- auto-ship -->` when you want merge without clicking.
 
 ---
@@ -109,3 +126,5 @@ See [PRISMA-BASELINE-ONCE.md](./PRISMA-BASELINE-ONCE.md)
 | P1012 / missing env on Preview | Add `DIRECT_URL` (and `DATABASE_URL`) on **Preview** in Vercel |
 | Auto-merge stuck | Actions **Read and write**; PR has `<!-- auto-ship -->` |
 | Review workflow fails | Check `CURSOR_API_KEY`; Cursor integration includes repo |
+| Supabase migrate fails on `main` | Fix the three Actions secrets; `SUPABASE_PROJECT_REF` must be 20 lowercase letters |
+| SQL not on prod after merge | Prisma → Vercel deploy; `supabase/migrations/` → Actions workflow only |
