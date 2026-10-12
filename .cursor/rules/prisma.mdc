@@ -33,6 +33,17 @@ Vercel **production** builds run `prisma migrate deploy` as part of `npm run bui
 
 Agents create migrations in dev with `prisma migrate dev` and commit `prisma/migrations/`; production applies them on Vercel. Do not rely on `db:supabase:push` for routine schema ship to production.
 
+### One-time after baseline merge (existing production DB)
+
+If production already has tables from `db push` and Vercel fails with **P3005** (“database schema is not empty”), mark the baseline migration as applied **once** from your machine using the **direct** Supabase connection (does not re-run DDL):
+
+```bash
+DATABASE_URL='postgresql://...' DIRECT_URL='postgresql://...@db.<project>.supabase.co:5432/postgres' \
+  npx prisma migrate resolve --applied 20261012172737_baseline
+```
+
+Use the migration folder name under `prisma/migrations/`. After that, `prisma migrate deploy` on Vercel succeeds for new migrations.
+
 ## Do not
 
 - Run `prisma migrate deploy` locally against **production** unless explicitly debugging.
