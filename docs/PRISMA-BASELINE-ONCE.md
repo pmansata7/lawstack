@@ -8,9 +8,13 @@ Production Supabase was synced with `prisma db push`, so tables already exist bu
 
 The repo now includes an initial **baseline** migration that describes the current schema. That migration must be **marked as already applied** on production once — it does **not** re-run the DDL on a DB that already matches the schema.
 
-## What you do once (after the baseline PR merges)
+## Automatic on Vercel production
 
-From your machine, with **production** credentials:
+Production builds (`scripts/vercel-build.mjs`) retry after `prisma migrate resolve --applied 20261012172737_baseline` when deploy fails with **P3005**, so the first deploy after the baseline lands usually succeeds without a manual step.
+
+## Manual baseline (optional)
+
+If you prefer to baseline before deploy, or auto-resolve fails (schema drift), from your machine with **production** credentials:
 
 1. In Supabase: **Project Settings → Database** — use the **direct** connection string (host `db.<project>.supabase.co`, port **5432**) for `DIRECT_URL`. Use the pooler or direct URL for `DATABASE_URL` as you already do in Vercel.
 
