@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { describe, it } from "node:test";
 import {
   BASELINE_MIGRATION,
@@ -18,7 +20,16 @@ The database schema is not empty.`;
 });
 
 describe("BASELINE_MIGRATION", () => {
-  it("matches the baseline folder under prisma/migrations", () => {
-    assert.equal(BASELINE_MIGRATION, "20261012172737_baseline");
+  it("matches the baseline migration folder under prisma/migrations", () => {
+    const migrationDir = join(
+      process.cwd(),
+      "prisma",
+      "migrations",
+      BASELINE_MIGRATION,
+    );
+    assert.ok(
+      existsSync(join(migrationDir, "migration.sql")),
+      `expected ${migrationDir}/migration.sql`,
+    );
   });
 });
