@@ -1,5 +1,9 @@
 import { spawnSync } from "node:child_process";
 import { ensurePrismaEnv } from "./ensure-prisma-env.mjs";
+import {
+  BASELINE_MIGRATION,
+  shouldResolveBaselineOnDeployFailure,
+} from "./vercel-build-helpers.mjs";
 
 ensurePrismaEnv();
 
@@ -12,9 +16,6 @@ if (!hasDatabase && !hasDirect) {
   );
   process.exit(1);
 }
-
-/** Matches `prisma/migrations/*_baseline` — existing prod DBs need this marked applied once. */
-const BASELINE_MIGRATION = "20261012172737_baseline";
 
 function run(command, args, { inherit = true } = {}) {
   const result = spawnSync(command, args, {
@@ -40,7 +41,7 @@ function runMigrateDeploy() {
   }
 
   const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
-  if (output.includes("P3005")) {
+  if (shouldResolveBaselineOnDeployFailure(output)) {
     console.warn(
       `[vercel-build] P3005: production DB already has schema but no Prisma migration history. ` +
         `Marking baseline "${BASELINE_MIGRATION}" as applied, then retrying deploy.`,
