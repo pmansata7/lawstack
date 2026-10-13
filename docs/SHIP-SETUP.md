@@ -102,16 +102,16 @@ One-time: **Settings → Secrets and variables → Actions** → add:
 | `SUPABASE_ACCESS_TOKEN` | Yes | [Account tokens](https://supabase.com/dashboard/account/tokens) |
 | `SUPABASE_PROJECT_REF` | Yes | **Reference ID** (20 lowercase letters; `<ref>` in `https://<ref>.supabase.co`) |
 | `SUPABASE_DB_PASSWORD` | Yes | **Database** password |
-| `DIRECT_URL` | No | Direct Postgres URI (5432); if omitted, CI builds `db.<ref>.supabase.co` from ref + password |
-| `DATABASE_URL` | No | Pooler URI for runtime; CI uses `DIRECT_URL` for migrate + RLS when unset |
+| `DIRECT_URL` | **Yes (for Prisma in CI)** | **Session pooler** URI (port 5432) from Supabase → Database → Connection string — **same as Vercel** |
+| `DATABASE_URL` | No | Transaction pooler (6543) for app runtime; optional in CI |
 
 The workflow [`.github/workflows/supabase-migrate.yml`](../.github/workflows/supabase-migrate.yml) (**Database deploy**) on every qualifying push to `main` (or manual run):
 
 1. `supabase db push` — `supabase/migrations/*.sql`
 2. `prisma migrate deploy` — `prisma/migrations/*` (same P3005 baseline auto-resolve as Vercel)
-3. `npm run db:rls` — `supabase/rls-policies.sql`
+3. `supabase db query --linked -f supabase/rls-policies.sql`
 
-You do **not** need to run `db:rls` or `prisma migrate deploy` manually on production after this is configured.
+You do **not** need to run `db:rls` or `prisma migrate deploy` manually on production after `DIRECT_URL` is set in GitHub Actions (copy from Vercel).
 
 ---
 

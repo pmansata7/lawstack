@@ -15,6 +15,7 @@
     "db:supabase:push": "supabase db push --include-all",
     "db:rls": "prisma db execute --schema prisma/schema.prisma --file supabase/rls-policies.sql",
     "db:ci-deploy": "node scripts/ci-database-deploy.mjs",
+    "db:ci-rls": "supabase db query --linked -f supabase/rls-policies.sql",
     "eval": "npx tsx evals/run-eval.ts"
   },
   "dependencies": {
