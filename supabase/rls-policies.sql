@@ -20,6 +20,10 @@ ALTER TABLE collaborations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE case_transcripts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE intake_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE firm_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE case_tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
 
 -- ─── Organizations ─────────────────────────────────────────────────
 DROP POLICY IF EXISTS "org_members_can_read_orgs" ON organizations;
@@ -349,6 +353,90 @@ CREATE POLICY "members_can_delete_case_transcripts" ON case_transcripts
       SELECT 1 FROM cases c
       JOIN org_members m ON m.organization_id = c.organization_id
       WHERE c.id = case_transcripts.case_id AND m.user_id = auth.uid()::text
+    )
+  );
+
+-- ─── Intake Sessions ────────────────────────────────────────────────
+DROP POLICY IF EXISTS "members_can_read_intake_sessions" ON intake_sessions;
+CREATE POLICY "members_can_read_intake_sessions" ON intake_sessions
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM cases c
+      JOIN org_members m ON m.organization_id = c.organization_id
+      WHERE c.id = intake_sessions.case_id AND m.user_id = auth.uid()::text
+    )
+  );
+
+DROP POLICY IF EXISTS "members_can_modify_intake_sessions" ON intake_sessions;
+CREATE POLICY "members_can_modify_intake_sessions" ON intake_sessions
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM cases c
+      JOIN org_members m ON m.organization_id = c.organization_id
+      WHERE c.id = intake_sessions.case_id AND m.user_id = auth.uid()::text
+    )
+  );
+
+-- ─── Firm Templates ─────────────────────────────────────────────────
+DROP POLICY IF EXISTS "members_can_read_firm_templates" ON firm_templates;
+CREATE POLICY "members_can_read_firm_templates" ON firm_templates
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM org_members m
+      WHERE m.organization_id = firm_templates.organization_id
+        AND m.user_id = auth.uid()::text
+    )
+  );
+
+DROP POLICY IF EXISTS "members_can_modify_firm_templates" ON firm_templates;
+CREATE POLICY "members_can_modify_firm_templates" ON firm_templates
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM org_members m
+      WHERE m.organization_id = firm_templates.organization_id
+        AND m.user_id = auth.uid()::text
+    )
+  );
+
+-- ─── Case Tasks ─────────────────────────────────────────────────────
+DROP POLICY IF EXISTS "members_can_read_case_tasks" ON case_tasks;
+CREATE POLICY "members_can_read_case_tasks" ON case_tasks
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM cases c
+      JOIN org_members m ON m.organization_id = c.organization_id
+      WHERE c.id = case_tasks.case_id AND m.user_id = auth.uid()::text
+    )
+  );
+
+DROP POLICY IF EXISTS "members_can_modify_case_tasks" ON case_tasks;
+CREATE POLICY "members_can_modify_case_tasks" ON case_tasks
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM cases c
+      JOIN org_members m ON m.organization_id = c.organization_id
+      WHERE c.id = case_tasks.case_id AND m.user_id = auth.uid()::text
+    )
+  );
+
+-- ─── Analytics Events ───────────────────────────────────────────────
+DROP POLICY IF EXISTS "members_can_read_analytics_events" ON analytics_events;
+CREATE POLICY "members_can_read_analytics_events" ON analytics_events
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM org_members m
+      WHERE m.organization_id = analytics_events.organization_id
+        AND m.user_id = auth.uid()::text
+    )
+  );
+
+DROP POLICY IF EXISTS "members_can_insert_analytics_events" ON analytics_events;
+CREATE POLICY "members_can_insert_analytics_events" ON analytics_events
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM org_members m
+      WHERE m.organization_id = analytics_events.organization_id
+        AND m.user_id = auth.uid()::text
     )
   );
 
