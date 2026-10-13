@@ -93,27 +93,33 @@ See [PRISMA-BASELINE-ONCE.md](./PRISMA-BASELINE-ONCE.md)
 
 ---
 
-## Step 6 — GitHub secrets (Supabase migrate workflow)
+## Step 6 — GitHub secrets (database deploy workflow)
 
 One-time: **Settings → Secrets and variables → Actions** → add:
 
-| Secret | Where to get it |
-|--------|-----------------|
-| `SUPABASE_ACCESS_TOKEN` | [Account tokens](https://supabase.com/dashboard/account/tokens) — personal access token for the CLI |
-| `SUPABASE_PROJECT_REF` | Dashboard → **Project Settings → General → Reference ID** (exactly **20 lowercase letters**; the `<ref>` in `https://<ref>.supabase.co`) |
-| `SUPABASE_DB_PASSWORD` | **Project Settings → Database** → database password |
+| Secret | Required | Where to get it |
+|--------|----------|-----------------|
+| `SUPABASE_ACCESS_TOKEN` | Yes | [Account tokens](https://supabase.com/dashboard/account/tokens) |
+| `SUPABASE_PROJECT_REF` | Yes | **Reference ID** (20 lowercase letters; `<ref>` in `https://<ref>.supabase.co`) |
+| `SUPABASE_DB_PASSWORD` | Yes | **Database** password |
+| `DIRECT_URL` | No | Direct Postgres URI (5432); if omitted, CI builds `db.<ref>.supabase.co` from ref + password |
+| `DATABASE_URL` | No | Pooler URI for runtime; CI uses `DIRECT_URL` for migrate + RLS when unset |
 
-The workflow [`.github/workflows/supabase-migrate.yml`](../.github/workflows/supabase-migrate.yml) validates `SUPABASE_PROJECT_REF` before `supabase link`. A wrong value (e.g. project display name) fails with a clear error.
+The workflow [`.github/workflows/supabase-migrate.yml`](../.github/workflows/supabase-migrate.yml) (**Database deploy**) on every qualifying push to `main` (or manual run):
 
-After secrets are set, push a change under `supabase/migrations/` to `main` (or run the workflow manually) to confirm **Supabase migrations** succeeds.
+1. `supabase db push` — `supabase/migrations/*.sql`
+2. `prisma migrate deploy` — `prisma/migrations/*` (same P3005 baseline auto-resolve as Vercel)
+3. `npm run db:rls` — `supabase/rls-policies.sql`
+
+You do **not** need to run `db:rls` or `prisma migrate deploy` manually on production after this is configured.
 
 ---
 
 ## Step 7 — Day-to-day shipping
 
 - Cloud Agent on `pmansata7/lawstack`; read `.cursor/CLOUD.md`.
-- **Prisma schema:** `npx prisma migrate dev` locally → commit `prisma/migrations/*` → applied on **Vercel production** (`prisma migrate deploy` during build).
-- **Supabase SQL:** add files under `supabase/migrations/` in the PR → applied on **`main`** by GitHub Actions (not Vercel).
+- **Prisma schema:** `npx prisma migrate dev` locally → commit `prisma/migrations/*` → applied on **`main`** by **Database deploy** (and again on Vercel production build if you deploy there).
+- **Supabase SQL + RLS:** commit under `supabase/migrations/` or edit `supabase/rls-policies.sql` → applied on **`main`** by **Database deploy**.
 - PR body: `<!-- auto-ship -->` when you want merge without clicking.
 
 ---
@@ -127,4 +133,4 @@ After secrets are set, push a change under `supabase/migrations/` to `main` (or 
 | Auto-merge stuck | Actions **Read and write**; PR has `<!-- auto-ship -->` |
 | Review workflow fails | Check `CURSOR_API_KEY`; Cursor integration includes repo |
 | Supabase migrate fails on `main` | Fix the three Actions secrets; `SUPABASE_PROJECT_REF` must be 20 lowercase letters |
-| SQL not on prod after merge | Prisma → Vercel deploy; `supabase/migrations/` → Actions workflow only |
+| SQL / RLS not on prod after merge | Run **Database deploy** workflow manually; confirm the three Supabase secrets |

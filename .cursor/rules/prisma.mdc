@@ -36,8 +36,9 @@ Vercel **production** builds run `prisma migrate deploy` as part of `npm run bui
 
 | Path | Folder | Applied on production |
 |------|--------|------------------------|
-| Prisma | `prisma/migrations/` | Vercel build (`prisma migrate deploy`) |
-| Supabase SQL | `supabase/migrations/` | GitHub Actions (`supabase-migrate.yml` on `main`) |
+| Prisma | `prisma/migrations/` | GitHub Actions **Database deploy** + Vercel production build |
+| Supabase SQL | `supabase/migrations/` | GitHub Actions **Database deploy** |
+| RLS | `supabase/rls-policies.sql` | GitHub Actions **Database deploy** (`db:ci-deploy`) |
 
 Agents: Prisma schema changes → `prisma migrate dev` and commit `prisma/migrations/`. Supabase-only SQL (RLS tweaks, functions, legacy SQL) → new file under `supabase/migrations/` and commit. Do not apply production schema only via SQL Editor unless the user asks.
 

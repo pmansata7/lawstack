@@ -1,11 +1,17 @@
-# Apply Supabase migrations on push to main (when supabase/migrations/ or this file changes).
+# Full production DB deploy on main:
+#   1. Supabase SQL (supabase/migrations/)
+#   2. Prisma migrate deploy (prisma/migrations/)
+#   3. Row-level security (supabase/rls-policies.sql)
 #
-# Required repository secrets (Settings → Secrets and variables → Actions):
-#   SUPABASE_ACCESS_TOKEN — Personal access token from https://supabase.com/dashboard/account/tokens
-#   SUPABASE_PROJECT_REF  — Project Settings → General → Reference ID
-#   SUPABASE_DB_PASSWORD  — Project Settings → Database → Database password
+# Required GitHub Actions secrets:
+#   SUPABASE_ACCESS_TOKEN — https://supabase.com/dashboard/account/tokens
+#   SUPABASE_PROJECT_REF  — 20-char ref from https://<ref>.supabase.co
+#   SUPABASE_DB_PASSWORD  — Database password
+#
+# Optional (override auto-built direct URL for Prisma):
+#   DIRECT_URL, DATABASE_URL — Supabase connection URIs
 
-name: Supabase migrations
+name: Database deploy
 
 on:
   push:
@@ -13,6 +19,10 @@ on:
       - main
     paths:
       - 'supabase/migrations/**'
+      - 'supabase/rls-policies.sql'
+      - 'prisma/migrations/**'
+      - 'prisma/schema.prisma'
+      - 'scripts/ci-database-deploy.mjs'
       - '.github/workflows/supabase-migrate.yml'
   workflow_dispatch:
 
@@ -36,9 +46,6 @@ jobs:
         run: |
           if [[ ! "$SUPABASE_PROJECT_REF" =~ ^[a-z]{20}$ ]]; then
             echo "::error::SUPABASE_PROJECT_REF is invalid (expected exactly 20 lowercase letters)."
-            echo "Set it from Supabase Dashboard → Project Settings → General → Reference ID."
-            echo "This is NOT the project display name and NOT project_id in supabase/config.toml."
-            echo "Your ref appears in the project URL: https://<ref>.supabase.co"
             exit 1
           fi
 
@@ -49,8 +56,25 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
 
-      - name: Push migrations
+      - name: Push Supabase SQL migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: supabase db push
+        run: yes | supabase db push
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma migrate deploy and RLS
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npm run db:ci-deploy

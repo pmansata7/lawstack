@@ -14,6 +14,7 @@
     "db:small-claims-enum": "prisma db execute --schema prisma/schema.prisma --file supabase/migrations/20251002000000_add_small_claims_court_type.sql",
     "db:supabase:push": "supabase db push --include-all",
     "db:rls": "prisma db execute --schema prisma/schema.prisma --file supabase/rls-policies.sql",
+    "db:ci-deploy": "node scripts/ci-database-deploy.mjs",
     "eval": "npx tsx evals/run-eval.ts"
   },
   "dependencies": {
