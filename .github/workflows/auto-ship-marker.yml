@@ -1,6 +1,7 @@
-# When the PR body contains `<!-- auto-ship -->`, adds label `auto-merge` and merges
-# when checks pass (same run). Bot-applied labels do not fire `pull_request: labeled`,
-# so merge runs here instead of relying on `.github/workflows/auto-merge.yml`.
+# Cloud Agent PRs (head branch `cursor/*`) and PRs with `<!-- auto-ship -->` in the body
+# get label `auto-merge` and squash-merge when checks pass (same workflow run).
+# Bot-applied labels do not fire `pull_request: labeled`, so merge runs here instead
+# of relying on `.github/workflows/auto-merge.yml`.
 
 name: Auto-ship marker and merge
 
@@ -16,7 +17,7 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - name: Add auto-merge label from auto-ship marker
+      - name: Queue auto-merge for Cloud Agent PRs
         id: marker
         env:
           GH_TOKEN: ${{ github.token }}
@@ -26,8 +27,19 @@ jobs:
           set -euo pipefail
 
           body="$(gh pr view "$PR" -R "$REPO" --json body -q .body)"
-          if ! grep -qF '<!-- auto-ship -->' <<< "$body"; then
-            echo "PR body does not contain <!-- auto-ship -->; skipping."
+          head_ref="$(gh pr view "$PR" -R "$REPO" --json headRefName -q .headRefName)"
+
+          wants_merge=false
+          if grep -qF '<!-- auto-ship -->' <<< "$body"; then
+            wants_merge=true
+            echo "Auto-merge: <!-- auto-ship --> marker present."
+          elif [[ "$head_ref" == cursor/* ]]; then
+            wants_merge=true
+            echo "Auto-merge: Cloud Agent branch (${head_ref})."
+          fi
+
+          if [ "$wants_merge" = "false" ]; then
+            echo "No auto-merge trigger (not cursor/* and no auto-ship marker); skipping."
             echo "merge_requested=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -36,8 +48,8 @@ jobs:
 
           is_draft="$(gh pr view "$PR" -R "$REPO" --json isDraft -q .isDraft)"
           if [ "$is_draft" = "true" ]; then
-            echo "::error::PR is still a draft. Auto-ship cannot mark drafts ready (GITHUB_TOKEN limitation on bot-opened PRs). Open the PR as Ready for review (draft=false) when using <!-- auto-ship -->."
-            exit 1
+            echo "PR is still a draft; will auto-merge after it is marked ready for review."
+            exit 0
           fi
 
           if gh pr view "$PR" -R "$REPO" --json labels -q '.labels[].name' | grep -qxF 'auto-merge'; then
@@ -46,7 +58,7 @@ jobs:
           fi
 
           gh pr edit "$PR" -R "$REPO" --add-label auto-merge
-          echo "Added label auto-merge (auto-ship marker)."
+          echo "Added label auto-merge."
 
   merge-when-ready:
     needs: add-auto-merge-label
@@ -70,19 +82,20 @@ jobs:
         run: |
           set -euo pipefail
 
+          is_draft="$(gh pr view "$PR" --json isDraft -q .isDraft)"
+          if [ "$is_draft" = "true" ]; then
+            echo "Still a draft; not merging yet."
+            exit 0
+          fi
+
           echo "Auto-merge requested for PR #${PR}"
 
           bash scripts/wait-for-external-pr-checks.sh "$PR"
 
           decision="$(gh pr view "$PR" --json reviewDecision -q .reviewDecision)"
           if [ "$decision" = "CHANGES_REQUESTED" ]; then
-            human_cr="$(gh api "repos/${GH_REPO}/pulls/${PR}/reviews" \
-              --jq '[.[] | select(.state == "CHANGES_REQUESTED") | select(.user.login != "cursor[bot]")] | length')"
-            if [ "$human_cr" != "0" ]; then
-              echo "A human review requested changes; not merging."
-              exit 1
-            fi
-            echo "Only cursor[bot] CHANGES_REQUESTED (often CI timing); external checks passed — merging."
+            echo "A review requested changes; not merging."
+            exit 1
           fi
 
           mergeable="$(gh pr view "$PR" --json mergeable -q .mergeable)"
