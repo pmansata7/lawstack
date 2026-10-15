@@ -29,6 +29,18 @@ const PROVIDERS = [
     models: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "o1-preview"],
   },
   {
+    value: "openrouter",
+    label: "OpenRouter (Claude, GLM, GPT, …)",
+    models: [
+      "anthropic/claude-opus-5.5",
+      "anthropic/claude-fable-5.1",
+      "anthropic/claude-sonnet-5.5",
+      "anthropic/claude-haiku-5.5",
+      "z-ai/glm-5.3-flash",
+      "openai/gpt-6-astra",
+    ],
+  },
+  {
     value: "anthropic",
     label: "Anthropic Claude (Claude 3.5 Sonnet, Opus)",
     models: [
@@ -165,8 +177,12 @@ export function AiSettingsForm({
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Your API key is stored encrypted and never shared. OpenAI keys also
-              power Whisper transcription for in-app recordings.
+              Your API key is stored encrypted and never shared.
+              {settings.provider === "openai"
+                ? " OpenAI keys also power Whisper transcription for in-app recordings."
+                : settings.provider === "openrouter"
+                  ? " Use your OpenRouter API key (sk-or-…). GLM-Legal is not on OpenRouter; try Claude Opus 5.5 for quality or z-ai/glm-5.3-flash for Z.ai’s open GLM line. Whisper still needs a separate OpenAI key."
+                  : " Whisper transcription requires an OpenAI key in addition to your chat provider."}
             </p>
           </div>
 

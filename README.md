@@ -10,7 +10,7 @@ AI for real-world litigation. Turn facts into evidence-backed pleadings that sur
 - **Complaint Draft Generator** — Generate structured, court-ready complaints with proper caption, jurisdiction, factual allegations, causes of action, and prayer for relief
 - **Review & File** — Collaborate with inline comments, resolve threads, export to PDF/DOCX/TXT, and track filing readiness
 - **Multi-Tenant** — Organization-based with roles (Owner, Admin, Attorney, Paralegal, Viewer)
-- **Pluggable AI** — Switch between OpenAI, Anthropic Claude, and AWS Bedrock with per-task model routing
+- **Pluggable AI** — Switch between OpenAI, OpenRouter, Anthropic Claude, and AWS Bedrock with per-task model routing
 
 ## Tech Stack
 
@@ -19,7 +19,7 @@ AI for real-world litigation. Turn facts into evidence-backed pleadings that sur
 - **Database**: Supabase (PostgreSQL) + Prisma ORM
 - **Auth**: Supabase Auth with Row-Level Security
 - **Storage**: Supabase Storage for document uploads
-- **AI**: Pluggable provider abstraction (OpenAI / Anthropic / Bedrock)
+- **AI**: Pluggable provider abstraction (OpenAI / OpenRouter / Anthropic / Bedrock)
 - **Deploy**: Vercel + Supabase
 
 ## Getting Started

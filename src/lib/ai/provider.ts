@@ -1,5 +1,5 @@
 // ─── Pluggable AI Provider Abstraction ───────────────────────────────
-// Supports OpenAI, Anthropic Claude, and AWS Bedrock via a unified interface.
+// Supports OpenAI, OpenRouter, Anthropic Claude, and AWS Bedrock via a unified interface.
 // Provider selection is driven by the org's AiSetting row.
 
 import OpenAI from "openai";
@@ -10,7 +10,19 @@ import {
 } from "@aws-sdk/client-bedrock-runtime";
 import { fromEnv } from "@aws-sdk/credential-providers";
 
-export type AiProvider = "openai" | "anthropic" | "bedrock";
+export type AiProvider = "openai" | "openrouter" | "anthropic" | "bedrock";
+
+export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+
+/** Suggested OpenRouter model IDs for litigation workflows (not on GLM-Legal). */
+export const OPENROUTER_LEGAL_MODEL_SUGGESTIONS = [
+  "anthropic/claude-opus-5.5",
+  "anthropic/claude-fable-5.1",
+  "anthropic/claude-sonnet-5.5",
+  "anthropic/claude-haiku-5.5",
+  "z-ai/glm-5.3-flash",
+  "openai/gpt-6-astra",
+] as const;
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -44,12 +56,31 @@ export interface IAiProvider {
 // ─── OpenAI Provider ──────────────────────────────────────────────────
 
 export class OpenAIProvider implements IAiProvider {
-  name: AiProvider = "openai";
+  name: AiProvider;
   private client: OpenAI;
   private defaultModel: string;
 
-  constructor(apiKey: string, model = "gpt-4o") {
-    this.client = new OpenAI({ apiKey });
+  constructor(
+    apiKey: string,
+    model = "gpt-4o",
+    options?: { baseURL?: string; providerName?: AiProvider },
+  ) {
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ?? "https://lawstack.app";
+    const isOpenRouter = options?.baseURL === OPENROUTER_BASE_URL;
+    this.client = new OpenAI({
+      apiKey,
+      baseURL: options?.baseURL,
+      ...(isOpenRouter
+        ? {
+            defaultHeaders: {
+              "HTTP-Referer": siteUrl,
+              "X-Title": "Lawstack",
+            },
+          }
+        : {}),
+    });
+    this.name = options?.providerName ?? "openai";
     this.defaultModel = model;
   }
 
@@ -239,6 +270,34 @@ export class BedrockProvider implements IAiProvider {
 
 // ─── Provider Factory ─────────────────────────────────────────────────
 
+export function resolveEnvApiKey(provider: AiProvider): string {
+  switch (provider) {
+    case "openrouter":
+      return process.env.OPENROUTER_API_KEY ?? "";
+    case "anthropic":
+      return process.env.ANTHROPIC_API_KEY ?? "";
+    case "bedrock":
+      return process.env.AWS_ACCESS_KEY_ID ?? "";
+    case "openai":
+    default:
+      return process.env.OPENAI_API_KEY ?? "";
+  }
+}
+
+export function defaultModelForProvider(provider: AiProvider): string {
+  switch (provider) {
+    case "openrouter":
+      return "anthropic/claude-opus-5.5";
+    case "anthropic":
+      return "claude-sonnet-4-20250514";
+    case "bedrock":
+      return "anthropic.claude-3-5-sonnet-20241022-v2:0";
+    case "openai":
+    default:
+      return "gpt-4o";
+  }
+}
+
 export function createAiProvider(
   provider: AiProvider,
   apiKey: string,
@@ -247,6 +306,11 @@ export function createAiProvider(
   switch (provider) {
     case "openai":
       return new OpenAIProvider(apiKey, model);
+    case "openrouter":
+      return new OpenAIProvider(apiKey, model ?? defaultModelForProvider("openrouter"), {
+        baseURL: OPENROUTER_BASE_URL,
+        providerName: "openrouter",
+      });
     case "anthropic":
       return new AnthropicProvider(apiKey, model);
     case "bedrock":
@@ -258,18 +322,8 @@ export function createAiProvider(
 
 export function getProviderFromEnv(): IAiProvider {
   const provider = (process.env.AI_PROVIDER ?? "openai") as AiProvider;
-  const apiKey =
-    process.env.OPENAI_API_KEY ??
-    process.env.ANTHROPIC_API_KEY ??
-    process.env.AWS_ACCESS_KEY_ID ??
-    "";
-  const model =
-    process.env.AI_MODEL ??
-    (provider === "openai"
-      ? "gpt-4o"
-      : provider === "anthropic"
-        ? "claude-sonnet-4-20250514"
-        : "anthropic.claude-3-5-sonnet-20241022-v2:0");
+  const apiKey = resolveEnvApiKey(provider);
+  const model = process.env.AI_MODEL ?? defaultModelForProvider(provider);
 
   return createAiProvider(provider, apiKey, model);
 }
