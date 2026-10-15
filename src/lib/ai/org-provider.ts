@@ -9,7 +9,7 @@ import {
 export class AiNotConfiguredError extends Error {
   constructor() {
     super(
-      "AI is not configured. Add an API key in Settings → AI, or set OPENAI_API_KEY / ANTHROPIC_API_KEY in the server environment.",
+      "AI is not configured. Add an API key in Settings → AI, or set OPENAI_API_KEY, OPENROUTER_API_KEY, or ANTHROPIC_API_KEY in the server environment.",
     );
     this.name = "AiNotConfiguredError";
   }
@@ -23,7 +23,9 @@ function hasEnvAiCredentials(): boolean {
     );
   }
   return Boolean(
-    process.env.OPENAI_API_KEY ?? process.env.ANTHROPIC_API_KEY,
+    process.env.OPENAI_API_KEY ??
+      process.env.OPENROUTER_API_KEY ??
+      process.env.ANTHROPIC_API_KEY,
   );
 }
 
