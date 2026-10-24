@@ -99,11 +99,11 @@ One-time: **Settings → Secrets and variables → Actions** → add:
 
 | Secret | Required | Where to get it |
 |--------|----------|-----------------|
-| `SUPABASE_ACCESS_TOKEN` | Yes | [Account tokens](https://supabase.com/dashboard/account/tokens) |
-| `SUPABASE_PROJECT_REF` | Yes | **Reference ID** (20 lowercase letters; `<ref>` in `https://<ref>.supabase.co`) |
-| `SUPABASE_DB_PASSWORD` | Yes | **Database** password |
-| `DIRECT_URL` | **Yes (for Prisma in CI)** | **Session pooler** URI (port 5432) from Supabase → Database → Connection string — **same as Vercel** |
-| `DATABASE_URL` | No | Transaction pooler (6543) for app runtime; optional in CI |
+| `DIRECT_URL` | **Yes** | **Session pooler** URI (port 5432) from Supabase → Database → Connection string — **same as Vercel** |
+| `DATABASE_URL` | No | Transaction pooler (6543) for app runtime; CI copies `DIRECT_URL` when unset |
+| `SUPABASE_ACCESS_TOKEN` | No (CI) | Only for local `supabase link`. Scoped tokens need **Project settings (read)** (`project_admin_read`) plus API key read permissions — or use `supabase db push --db-url` like CI |
+| `SUPABASE_PROJECT_REF` | No (CI) | **Reference ID** (20 lowercase letters) — for `supabase link` locally |
+| `SUPABASE_DB_PASSWORD` | No (CI) | Database password — for `supabase link` locally |
 
 The workflow [`.github/workflows/supabase-migrate.yml`](../.github/workflows/supabase-migrate.yml) (**Database deploy**) on every qualifying push to `main` (or manual run):
 
