@@ -109,7 +109,7 @@ The workflow [`.github/workflows/supabase-migrate.yml`](../.github/workflows/sup
 
 1. `supabase db push` — `supabase/migrations/*.sql`
 2. `prisma migrate deploy` — `prisma/migrations/*` (same P3005 baseline auto-resolve as Vercel)
-3. `supabase db query --linked -f supabase/rls-policies.sql`
+3. `npm run db:rls` — `supabase/rls-policies.sql` via Prisma `db execute`
 
 You do **not** need to run `db:rls` or `prisma migrate deploy` manually on production after `DIRECT_URL` is set in GitHub Actions (copy from Vercel).
 
