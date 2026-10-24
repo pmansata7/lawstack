@@ -26,6 +26,7 @@ on:
       - 'prisma/migrations/**'
       - 'prisma/schema.prisma'
       - 'scripts/ci-database-deploy.mjs'
+      - 'scripts/ci-apply-rls.mjs'
       - '.github/workflows/supabase-migrate.yml'
   workflow_dispatch:
 
@@ -70,7 +71,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
-        run: node scripts/ensure-prisma-env.mjs && npm run db:rls
+        run: npm run db:ci-rls
 
       - name: Prisma migrate deploy
         env:
