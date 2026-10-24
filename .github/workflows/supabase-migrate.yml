@@ -10,7 +10,7 @@
 #   DIRECT_URL            — Session pooler URI (port 5432); copy from Vercel / Supabase dashboard
 #
 # Optional:
-#   DATABASE_URL — Pooler URI for runtime; Prisma uses DIRECT_URL when set
+#   DATABASE_URL — Pooler URI (6543); if unset, CI copies DIRECT_URL for Prisma schema validation
 
 name: Database deploy
 

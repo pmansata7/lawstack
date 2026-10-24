@@ -13,6 +13,9 @@ export function ensurePrismaEnv() {
   if (!direct && database) {
     process.env.DIRECT_URL = database;
   }
+  if (!database && direct) {
+    process.env.DATABASE_URL = direct;
+  }
 }
 
 ensurePrismaEnv();
