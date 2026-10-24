@@ -57,11 +57,6 @@ jobs:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
         run: supabase db push --yes --db-url "$DIRECT_URL"
 
-      - name: Apply RLS policies (Supabase CLI)
-        env:
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-        run: supabase db query --db-url "$DIRECT_URL" -f supabase/rls-policies.sql
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -70,6 +65,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Apply RLS policies
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: node scripts/ensure-prisma-env.mjs && npm run db:rls
 
       - name: Prisma migrate deploy
         env:
