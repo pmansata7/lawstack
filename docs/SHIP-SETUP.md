@@ -134,3 +134,5 @@ You do **not** need to run `db:rls` or `prisma migrate deploy` manually on produ
 | Review workflow fails | Check `CURSOR_API_KEY`; Cursor integration includes repo |
 | Supabase migrate fails on `main` | Fix the three Actions secrets; `SUPABASE_PROJECT_REF` must be 20 lowercase letters |
 | SQL / RLS not on prod after merge | Run **Database deploy** workflow manually; confirm the three Supabase secrets |
+## Free-tier pause (production Supabase)
+If GitHub emails about Supabase pausing due to inactivity, configure the daily **Supabase heartbeat** workflow — see [supabase-heartbeat.md](supabase-heartbeat.md).
