@@ -19,7 +19,8 @@ A scheduled GitHub Action (`.github/workflows/supabase-heartbeat.yml`) runs a li
    | `SUPABASE_URL` | `https://YOUR_PROJECT_REF.supabase.co` (your project) |
    | `SUPABASE_ANON_KEY` | publishable or legacy anon key from step 2 |
 
-4. **Actions** → **Supabase heartbeat** → **Run workflow** once to confirm a green run (log should show `Target Supabase host: <your-ref>.supabase.co` and HTTP 200), then rely on the daily schedule (14:00 UTC).
+4. Apply `supabase/migrations/20261115000000_supabase_heartbeat_probe.sql` to your Supabase project if the `supabase_heartbeat_probe` table is not present yet.
+5. **Actions** → **Supabase heartbeat** → **Run workflow** once to confirm a green run (log should show `Target Supabase host: <your-ref>.supabase.co` and HTTP 200), then rely on the daily schedule (14:00 UTC).
 
 **Note:** On some free private repos, GitHub may throttle or disable scheduled workflows after long repo inactivity. If the schedule stops firing, use **Run workflow** manually or upgrade the repo’s GitHub plan.
 
