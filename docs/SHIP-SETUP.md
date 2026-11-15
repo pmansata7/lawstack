@@ -99,9 +99,9 @@ One-time: **Settings → Secrets and variables → Actions** → add:
 
 | Secret | Required | Where to get it |
 |--------|----------|-----------------|
-| `DIRECT_URL` | **Yes** | **Session pooler** URI (port 5432) from Supabase → Database → Connection string — **same as Vercel** |
+| `DIRECT_URL` | **Yes** | **Session pooler** URI (`*.pooler.supabase.com:5432`) from Supabase → Database → Connection string — **not** `db.<ref>.supabase.co` in Actions (Vercel may still use direct for Prisma) |
 | `DATABASE_URL` | No | Transaction pooler (6543) for app runtime; CI copies `DIRECT_URL` when unset |
-| `SUPABASE_ACCESS_TOKEN` | No (CI) | Only for local `supabase link`. Scoped tokens need **Project settings (read)** (`project_admin_read`) plus API key read permissions — or use `supabase db push --db-url` like CI |
+| `SUPABASE_ACCESS_TOKEN` | No (CI) | Only for local `supabase link`. Scoped tokens need **Project settings (read)** (`project_admin_read`) plus API key read permissions — or use `supabase db push --remote` like CI |
 | `SUPABASE_PROJECT_REF` | No (CI) | **Reference ID** (20 lowercase letters) — for `supabase link` locally |
 | `SUPABASE_DB_PASSWORD` | No (CI) | Database password — for `supabase link` locally |
 

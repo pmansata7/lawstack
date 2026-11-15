@@ -4,9 +4,10 @@
 #   3. Row-level security (supabase/rls-policies.sql) via Supabase CLI
 #
 # Required GitHub Actions secrets:
-#   DIRECT_URL — Session pooler URI (port 5432); copy from Vercel / Supabase dashboard
+#   DIRECT_URL — Supabase Session pooler URI (host *.pooler.supabase.com, port 5432).
+#   Do not use the direct host db.<ref>.supabase.co in CI (IPv6 / connection refused on GHA).
 #
-# Optional (not used when --db-url is set; kept for manual supabase link locally):
+# Optional (not used in CI; kept for manual supabase link locally):
 #   SUPABASE_ACCESS_TOKEN — full or scoped PAT with project_admin_read if you use `supabase link`
 #   SUPABASE_PROJECT_REF  — 20-char ref from https://<ref>.supabase.co
 #   SUPABASE_DB_PASSWORD  — Database password
@@ -48,16 +49,54 @@ jobs:
         env:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
         run: |
+          set -euo pipefail
           if [[ -z "${DIRECT_URL// }" ]]; then
-            echo "::error::Missing DIRECT_URL GitHub Actions secret (Supabase session pooler URI, port 5432)."
+            echo "::error::Missing DIRECT_URL GitHub Actions secret (Supabase Session pooler URI, port 5432)."
             exit 1
+          fi
+          if [[ "$DIRECT_URL" =~ ://[^@]*@db\. ]]; then
+            echo "::error::DIRECT_URL uses direct Supabase host \`db.\` in the URI. Use Session pooler (\`*.pooler.supabase.com:5432\`). See docs/SHIP-SETUP.md."
+            exit 1
+          fi
+
+          uri="${DIRECT_URL#postgresql://}"
+          uri="${uri#postgres://}"
+          userinfo="${uri%%@*}"
+          rest="${uri#*@}"
+          hostport="${rest%%/*}"
+          host="${hostport%%:*}"
+          port="${hostport##*:}"
+          user="${userinfo%%:*}"
+
+          if [[ "$host" =~ ^db\.[a-z0-9]+\.supabase\.co$ ]]; then
+            echo "::error::DIRECT_URL uses direct host \`db.<ref>.supabase.co\`. Use Session pooler (\`*.pooler.supabase.com:5432\`) instead. See docs/SHIP-SETUP.md."
+            exit 1
+          fi
+          if [[ "$host" != *pooler.supabase.com ]]; then
+            echo "::error::DIRECT_URL host must be a Supabase pooler (\`*.pooler.supabase.com\`), got: ${host}"
+            exit 1
+          fi
+          if [[ "$port" != "5432" ]]; then
+            echo "::error::DIRECT_URL must use port 5432 (Session pooler), not ${port} (Transaction pooler uses 6543)."
+            exit 1
+          fi
+          if [[ "$user" != postgres.* ]] && [[ "$user" != "postgres" ]]; then
+            echo "::warning::DIRECT_URL user is \`${user}\`; Session pooler usually uses \`postgres.<project-ref>\`."
+          elif [[ "$user" == "postgres" ]]; then
+            echo "::warning::DIRECT_URL user is \`postgres\`; Session pooler URIs usually use \`postgres.<project-ref>\` (see Supabase connection string UI)."
           fi
 
       - name: Push Supabase SQL migrations
         env:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
-        run: supabase db push --yes --db-url "$DIRECT_URL"
-
+        run: |
+          set -euo pipefail
+          if supabase db push --help 2>&1 | grep -q -- '--remote'; then
+            supabase db push --yes --remote "$DIRECT_URL"
+          else
+            echo "::warning::Supabase CLI lacks --remote; falling back to deprecated --db-url."
+            supabase db push --yes --db-url "$DIRECT_URL"
+          fi
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
