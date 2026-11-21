@@ -4,7 +4,7 @@ Supabase **pauses** projects on the free plan after about **7 days without suffi
 
 See [Supabase: Project pausing](https://supabase.com/docs/guides/platform/free-project-pausing).
 
-A scheduled GitHub Action (`.github/workflows/supabase-heartbeat.yml`) runs a lightweight **PostgREST read** against `public.supabase_heartbeat_probe` once per day so Postgres sees real query activity. An empty result (`[]`) is fine — the query still ran. Failed runs show up as red in the Actions tab.
+A scheduled GitHub Action (`.github/workflows/supabase-heartbeat.yml`) runs a lightweight **PostgREST read** against `public.supabase_heartbeat_probe` every 3 days so Postgres sees real query activity. An empty result (`[]`) is fine — the query still ran. Failed runs show up as red in the Actions tab.
 
 **Do not use `GET /auth/v1/health` alone** for keepalive: it returns HTTP 200 without touching your database, so scheduled jobs can stay green while the project still pauses.
 
@@ -20,7 +20,7 @@ A scheduled GitHub Action (`.github/workflows/supabase-heartbeat.yml`) runs a li
    | `SUPABASE_ANON_KEY` | publishable or legacy anon key from step 2 |
 
 4. Apply `supabase/migrations/20261115000000_supabase_heartbeat_probe.sql` to your Supabase project if the `supabase_heartbeat_probe` table is not present yet.
-5. **Actions** → **Supabase heartbeat** → **Run workflow** once to confirm a green run (log should show `Target Supabase host: <your-ref>.supabase.co` and HTTP 200), then rely on the daily schedule (14:00 UTC).
+5. **Actions** → **Supabase heartbeat** → **Run workflow** once to confirm a green run (log should show `Target Supabase host: <your-ref>.supabase.co` and HTTP 200), then rely on the every-3-day schedule (14:00 UTC).
 
 **Note:** On some free private repos, GitHub may throttle or disable scheduled workflows after long repo inactivity. If the schedule stops firing, use **Run workflow** manually or upgrade the repo’s GitHub plan.
 
